@@ -25,7 +25,9 @@ jobs:
           cache-dependency-path: scripts/requirements.lock.txt
 
       - name: Instalar dependências (hashes verificados)
-        run: pip install --require-hashes -r scripts/requirements.txt pytest
+        run: |
+          pip install --require-hashes -r scripts/requirements.txt
+          pip install pytest
 
       - name: Auditoria OSV (dependências Pin)
         run: python scripts/security/check_osv.py -r scripts/requirements.txt
