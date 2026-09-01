@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Lockfiles: projeto usa pnpm (bloqueia npm/yarn acidentais fora da raiz)
+package-lock.json
+npm-shrinkwrap.json
+
 # Next.js
 /.next/
 /out/

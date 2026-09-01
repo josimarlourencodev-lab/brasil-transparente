@@ -20,8 +20,8 @@ apps/mobile/
 
 ```bash
 cd apps/mobile
-npm install
-npx expo start
+pnpm install
+pnpm exec expo start
 ```
 
 Impressora de QR → Expo Go no celular.

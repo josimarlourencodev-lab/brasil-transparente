@@ -40,8 +40,8 @@ python3 scripts/security/dev_tokens.py
 docker compose up -d --build
 
 # 3. Testes dentro do container web
-docker compose exec web npm test
-docker compose exec web npm run typecheck
+docker compose exec web pnpm test
+docker compose exec web pnpm run typecheck
 ```
 
 Site em `http://localhost:3000`, API em `http://localhost:54321`, painel em `http://localhost:3000/admin`.
@@ -51,8 +51,8 @@ Alternativa sem Docker (desenvolvimento):
 ```bash
 cp .env.local.example .env.local   # preencha as chaves
 pip install --require-hashes -r scripts/requirements.txt
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Aplique o schema (`supabase/schema.sql`) no Supabase Cloud via SQL Editor.
@@ -77,7 +77,7 @@ feeds.json / env RSS_* → crawlers (RSS/Atom, retries) → dedupe → sanitize 
 
 - **Lockfile com hashes:** `scripts/requirements.lock.txt` + `pip install --require-hashes` (transitivas resolvidas via `pip-compile`).
 - **Auditoria OSV:** `python3 scripts/security/check_osv.py` (filtra falsos positivos de borda de range; exit code p/ CI).
-- **npm audit + lock:** `npm audit --audit-level=high` (rodado no CI).
+- **pnpm audit + lock:** `pnpm audit --audit-level=high` (frozen lockfile no CI).
 - **Config pacote web** segue Node ≥ 22 (`engines`).
 - **Sanitização:** `scripts/sanitize.py` bloqueia `<script>`, URIs `javascript:`, header-injection via CR/LF.
 - **RLS:** leitura pública protegida por policy; escrita apenas via `service_role`.
@@ -90,7 +90,7 @@ feeds.json / env RSS_* → crawlers (RSS/Atom, retries) → dedupe → sanitize 
 python3 -m pytest
 
 # Frontend (Vitest)
-npm test
+pnpm test
 ```
 
 Formato esperado: todos os testes verdes antes de merge (CI exige).
@@ -99,7 +99,7 @@ Formato esperado: todos os testes verdes antes de merge (CI exige).
 
 ```bash
 cd apps/mobile
-npm install
+pnpm install
 npx expo start
 ```
 

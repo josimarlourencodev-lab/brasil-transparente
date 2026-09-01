@@ -5,16 +5,17 @@
 # ==================================================
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS dev
 COPY . .
 EXPOSE 3000
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "run", "dev"]
 
 FROM deps AS ci
 COPY . .
-RUN npm run build
+RUN pnpm run build
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "run", "start"]
