@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python (ingestão + segurança)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: scripts/requirements.lock.txt
+
+      - name: Instalar dependências (hashes verificados)
+        run: pip install --require-hashes -r scripts/requirements.txt pytest
+
+      - name: Auditoria OSV (dependências Pin)
+        run: python scripts/security/check_osv.py -r scripts/requirements.txt
+
+      - name: Testes de resiliência e integração (mock)
+        run: python -m pytest
+
+  web:
+    name: Web (Next.js + PWA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependências
+        run: npm ci --ignore-scripts
+
+      - name: Auditar dependências (npm audit)
+        run: npm audit --audit-level=high
+
+      - name: Testes (Vitest)
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build de produção
+        run: npm run build

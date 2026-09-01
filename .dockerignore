@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env.local.dev
+.env*.dev
+*.pyc
+__pycache__
+.vercel
+test-results
+coverage

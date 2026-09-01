@@ -1,0 +1,6 @@
+## Arquivo de entrada (pins diretos). O lock com hashes é requirements.lock.txt
+##
+## pip install -r requirements.txt   → instala com verificação rigorosa de hashes.
+--require-hashes
+--no-deps
+-r requirements.lock.txt

@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Brasil Transparente",
+    "slug": "brasil-transparente",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "brasiltransparente",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0F4C81",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.org.brasiltransparente.app"
+    },
+    "android": {
+      "package": "br.org.brasiltransparente.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F4C81"
+      }
+    },
+    "extra": {
+      "supabaseUrl": "http://localhost:54321",
+      "supabaseAnonKey": ""
+    }
+  }
+}

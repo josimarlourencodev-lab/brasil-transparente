@@ -1,0 +1,96 @@
+name: brasil-transparente
+
+# ============================================================
+# Ambiente de desenvolvimento containerizado (Docker).
+#
+# Pré-requisito: gere as credenciais JWT (anon/service_role) com:
+#     python scripts/security/dev_tokens.py          # cria .env.local.dev
+#     cp .env.dev.example .env                       # variáveis de compose (opcional)
+#
+# Subir tudo (banco + API + web hot-reload + worker):
+#     docker compose up --build
+#
+# Hot-reload: a web monta ./ como volume e roda `next dev`, atualizando
+# automaticamente o container quando a suíte de testes passar/build ok.
+# ============================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-brasil_transparente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brasil_transparente_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-brasil_transparente}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./supabase/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./supabase/init-dev.sql:/docker-entrypoint-initdb.d/02-init-dev.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-brasil_transparente} -d ${POSTGRES_DB:-brasil_transparente}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  api:
+    # PostgREST: réplica fiel e local do endpoint REST do Supabase.
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    env_file:
+      - .env.local.dev
+    environment:
+      PGRST_DB_URI: postgres://${POSTGRES_USER:-brasil_transparente}:${POSTGRES_PASSWORD:-brasil_transparente_dev}@db:5432/${POSTGRES_DB:-brasil_transparente}
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:-public}
+      PGRST_DB_ANON_ROLE: ${PGRST_DB_ANON_ROLE:-anon}
+      PGRST_DB_EXTRA_SEARCH_PATH: public
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "54321:3000"
+
+  web:
+    build:
+      context: .
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env.local.dev
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+
+  worker:
+    build:
+      context: ./scripts
+      dockerfile: ../docker/worker.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.local.dev
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_INTERNAL_URL:-http://api:3000}
+      INGEST_INTERVAL_MINUTOS: ${INGEST_INTERVAL_MINUTOS:-360}
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      RSS_FEEDS_OFICIAIS: ${RSS_FEEDS_OFICIAIS:-}
+      RSS_FEEDS_IMPRENSA: ${RSS_FEEDS_IMPRENSA:-}
+      RSS_FEEDS_INDEPENDENTES: ${RSS_FEEDS_INDEPENDENTES:-}
+    volumes:
+      - ./scripts:/app/scripts
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  db_data:

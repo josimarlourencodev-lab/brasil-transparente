@@ -1,0 +1,23 @@
+{
+  "_comentario": "Feeds validados em set/2026. A câmara (camara.leg.br) bloqueia acesso automatizado (405). gov.br lista serviços com <guid> no lugar de <link> (o parser trata isso).",
+  "oficiais": [
+    "https://www12.senado.leg.br/noticias/rss",
+    "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml"
+  ],
+  "imprensa": [
+    "https://g1.globo.com/rss/g1/politica/",
+    "https://www.congressoemfoco.com.br/feed/"
+  ],
+  "independentes": [
+    "https://www.osintbrasil.com.br/rss.xml"
+  ],
+  "politicos": [
+    {
+      "nome": "",
+      "partido": "",
+      "cargo": "",
+      "atuacao": true,
+      "termos_busca": []
+    }
+  ]
+}
