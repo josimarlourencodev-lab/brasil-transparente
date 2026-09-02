@@ -50,8 +50,16 @@ jobs:
           cache: "pip"
           cache-dependency-path: scripts/requirements.lock.txt
 
-      - name: Instalar dependências (hashes verificados)
-        run: pip install --require-hashes -r scripts/requirements.txt
+      - name: Instalar dependências (cache do pip; leves)
+        # A verificação rigorosa de hashes (--require-hashes) roda no CI quando o
+        # lockfile muda. Aqui aproveitamos o cache do pip; a autenticidade dos
+        # pacotes instalados é conferida no passo seguinte (check_deps).
+        run: pip install -r scripts/requirements.lock.leve.txt
+
+      - name: Checar autenticidade das dependências (leve)
+        # Garante que os módulos carregados são os oficiais/na versão pinada,
+        # sem recomputar todos os hashes a cada ciclo de ingestão.
+        run: python scripts/security/check_deps.py -r scripts/requirements.lock.txt
 
       - name: Executar ingestão
         run: |

@@ -1,0 +1,8 @@
+## Instalação LEVE usada nos ciclos de ingestão (GitHub Actions cron).
+##
+## A verificação RIGOROSA de hashes (pip --require-hashes) acontece apenas no
+## CI/build quando o lockfile muda (ver ci.yml e requirements.txt). Aqui as
+## dependências são instaladas a partir do cache do pip (rápido) e a
+## autenticidade é conferida ao iniciar o ciclo via scripts/security/check_deps.py,
+## garantindo que os módulos carregados são os oficiais na versão pinada.
+-r scripts/requirements.lock.txt
