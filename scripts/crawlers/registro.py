@@ -13,10 +13,12 @@ from __future__ import annotations
 
 import json
 import os
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import quote_plus
 
-SOURCE_CATEGORIES = ("oficiais", "imprensa", "independentes")
+SOURCE_CATEGORIES = ("oficiais", "imprensa", "independentes", "politicos")
 
 # Fontes "padrão" embutidas. Adicione/remova via scripts/feeds.json ou env.
 DEFAULT_FEEDS: dict[str, list[str]] = {
@@ -68,6 +70,25 @@ class Sources:
         return "imprensa"  # default neutro quando não classificável
 
 
+def politico_search_urls(politicos: list[dict]) -> list[str]:
+    """Gera URLs de busca dirigida (Google News RSS) para cada político ativo,
+    incluindo o nome completo e os termos_busca (apelidos) cadastrados.
+
+    A categoria 'politicos' permite classificar o tipo de fonte corretamente.
+    """
+    urls: list[str] = []
+    for p in politicos:
+        termos = [p.get("nome")] + list(p.get("termos_busca") or [])
+        for termo in dict.fromkeys(t for t in termos if t):
+            q = quote_plus(f'"{termo.strip()}" eleição presidencial')
+            urls.append(
+                "https://news.google.com/rss/search?q="
+                + q
+                + "&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+            )
+    return urls
+
+
 def _read_feeds_json() -> dict[str, list[str]]:
     path = Path(__file__).resolve().parent.parent / "feeds.json"
     if not path.exists():
@@ -95,5 +116,7 @@ def load_sources() -> Sources:
         merged = []
         for bucket in (registered.get(cat, []), env.get(cat, []), DEFAULT_FEEDS.get(cat, [])):
             merged.extend(bucket)
-        sources.by_category[cat] = list(dict.fromkeys(u for u in merged if u))
+            sources.by_category[cat] = list(
+                dict.fromkeys(u for u in merged if isinstance(u, str) and u)
+            )
     return sources
