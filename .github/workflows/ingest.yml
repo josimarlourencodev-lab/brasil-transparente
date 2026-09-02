@@ -34,6 +34,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
       RSS_FEEDS_OFICIAIS: ${{ secrets.RSS_FEEDS_OFICIAIS }}
       RSS_FEEDS_IMPRENSA: ${{ secrets.RSS_FEEDS_IMPRENSA }}
       RSS_FEEDS_INDEPENDENTES: ${{ secrets.RSS_FEEDS_INDEPENDENTES }}

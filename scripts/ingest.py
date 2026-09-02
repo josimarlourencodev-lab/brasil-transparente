@@ -97,7 +97,7 @@ def upsert_items(client, items: list[dict]) -> int:
             "contradicao_detectada": bool(item.get("contradicao_detectada")),
             "contradicao_descricao": item.get("contradicao_descricao") or "",
             "metadata": {
-                "envolveidos": item.get("envolvidos", []),
+                "envolvidos": item.get("envolvidos", []),
                 "contradicao_referencias": item.get("contradicao_referencias", []),
                 "status_sintese": item.get("status_sintese"),
             },

@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const filter = searchParams.get("categoria");
+  const q = searchParams.get("q");
   const limit = Math.min(Number(searchParams.get("limit") ?? 50), 100);
 
   let query = supabase()
@@ -15,6 +16,13 @@ export async function GET(request: Request) {
 
   if (filter) {
     query = query.eq("categoria", filter);
+  }
+
+  if (q && q.trim()) {
+    const term = q.trim().replace(/%/g, "\\%");
+    query = query.or(
+      `titulo.ilike.%${term}%,resumo.ilike.%${term}%,metadata->>envolvidos.ilike.%${term}%`
+    );
   }
 
   const { data, error } = await query;

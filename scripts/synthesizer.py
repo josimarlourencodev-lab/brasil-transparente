@@ -5,9 +5,14 @@ histórico disponível — apontar contradições de forma factual, citando as f
 (oficiais e de oposição) envolvidas. Nunca gera afirmações fora das fontes.
 
 Providers suportados sem dependências extras:
-  * groq      → API OpenAI-compatível (api.groq.com)
-  * together  → API OpenAI-compatível (api.together.xyz)
-  * gemini    → API Google (generativelanguage.googleapis.com)
+  * groq       → API OpenAI-compatível (api.groq.com) — tier gratuito
+  * together   → API OpenAI-compatível (api.together.xyz) — tier gratuito
+  * gemini     → API Google (generativelanguage.googleapis.com) — tier gratuito
+  * openrouter → API OpenAI-compatível (openrouter.ai) — modelos `:free`
+
+Variáveis:  LLM_PROVIDER (padrão groq) | LLM_API_KEY | LLM_MODEL (opcional;
+padrões: groq=openai/gpt-oss-20b, together=meta-llama/Llama-3.1-8B-Instruct-Turbo,
+gemini=gemini-2.5-flash, openrouter=meta-llama/llama-3.1-8b-instruct:free)
 """
 
 from __future__ import annotations
@@ -17,22 +22,23 @@ import os
 
 import requests
 
-TIMEOUT_SECONDS = 30
+TIMEOUT_SECONDS = 60
 
 BASE_URLS = {
     "groq": "https://api.groq.com/openai/v1/chat/completions",
     "together": "https://api.together.xyz/v1/chat/completions",
+    "openrouter": "https://openrouter.ai/api/v1/chat/completions",
 }
 
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:"
-    "generateContent"
+GEMINI_ENDPOINT = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
 
 DEFAULT_MODEL = {
-    "groq": "llama-3.1-8b-instant",
+    "groq": "openai/gpt-oss-20b",
     "together": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
-    "gemini": "gemini-1.5-flash",
+    "gemini": "gemini-2.5-flash",
+    "openrouter": "meta-llama/llama-3.1-8b-instruct:free",
 }
 
 SYSTEM_PROMPT = """Você é o módulo de síntese do Brasil Transparente, um portal neutro \
@@ -73,7 +79,7 @@ def _payload(provider: str, user_prompt: str) -> dict:
             ]
         }
     return {
-        "model": DEFAULT_MODEL.get(provider, DEFAULT_MODEL["groq"]),
+        "model": _model(provider),
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -81,6 +87,12 @@ def _payload(provider: str, user_prompt: str) -> dict:
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
     }
+
+
+def _model(provider: str) -> str:
+    return os.environ.get("LLM_MODEL", "").strip() or DEFAULT_MODEL.get(
+        provider, DEFAULT_MODEL["groq"]
+    )
 
 
 def _parse_response(provider: str, resp: dict) -> dict | None:
@@ -104,7 +116,10 @@ def _parse_response(provider: str, resp: dict) -> dict | None:
 
 
 def _call(provider: str, user_prompt: str) -> dict | None:
-    url = GEMINI_URL if provider == "gemini" else BASE_URLS.get(provider)
+    if provider == "gemini":
+        url = GEMINI_ENDPOINT.format(model=_model(provider))
+    else:
+        url = BASE_URLS.get(provider)
     if not url:
         return None
     params = {"key": os.environ.get("LLM_API_KEY", "")} if provider == "gemini" else None
@@ -123,6 +138,7 @@ def build_user_prompt(item: dict, historico: list[dict] | None = None) -> str:
     contexto = {
         "titulo": item.get("titulo"),
         "publicado_em": item.get("publicado_em"),
+        "conteudo": (item.get("resumo") or "")[:4000],
         "fontes": [
             {"url": item.get("url"), "tipo": item.get("_tipo_fonte", "imprensa")}
         ],
