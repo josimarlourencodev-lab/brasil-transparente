@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -161,8 +162,13 @@ def main(argv=None) -> int:
         list_active_politicos(client, politico_cache)
 
     synthesized = 0
+    max_syntheses = int(os.environ.get("MAX_SYNTHESIS_PER_RUN", "80"))
+
     if os.environ.get("LLM_API_KEY"):
         for idx, item in enumerate(cleaned):
+            if synthesized >= max_syntheses:
+                print(f"[throttle] limite de {max_syntheses} sínteses por execução atingido.")
+                break
             historico = []
             for name in item.get("envolvidos", []):
                 pid = politico_cache.get((name or "").strip().lower())
@@ -171,6 +177,12 @@ def main(argv=None) -> int:
             if item.get("status_sintese") != "ok":
                 synthesize_item(item, historico)
                 synthesized += 1
+                if synthesized % 10 == 0:
+                    print(f"[throttle] {synthesized} sínteses feitas — pausa 5s para respeitar rate limit...")
+                    time.sleep(5)
+                else:
+                    time.sleep(2)
+        print(f"[sintese] {synthesized}/{len(cleaned)} itens sintetizados.")
     else:
         item_placeholder_status(cleaned)
 
