@@ -1,15 +1,22 @@
 {
-  "_comentario": "Feeds validados em set/2026. A câmara (camara.leg.br) bloqueia acesso automatizado (405). gov.br lista serviços com <guid> no lugar de <link> (o parser trata isso).",
+  "_comentario": "Feeds validados em set/2026. A câmara (camara.leg.br) bloqueia acesso automatizado (405) e gov.br retorna HTML em ?setor=rss (não é feed). Foi testado HTTP+conteúdo agora; links mortos foram descartados.",
   "oficiais": [
     "https://www12.senado.leg.br/noticias/rss",
     "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml"
   ],
   "imprensa": [
     "https://g1.globo.com/rss/g1/politica/",
-    "https://www.congressoemfoco.com.br/feed/"
+    "https://www.congressoemfoco.com.br/feed/",
+    "https://feeds.folha.uol.com.br/poder/rss091.xml",
+    "https://feeds.bbci.co.uk/portuguese/rss.xml",
+    "https://www.poder360.com.br/feed/",
+    "https://veja.abril.com.br/feed/",
+    "https://www.cartacapital.com.br/feed/"
   ],
   "independentes": [
-    "https://www.osintbrasil.com.br/rss.xml"
+    "https://www.osintbrasil.com.br/rss.xml",
+    "https://theintercept.com/feed/?lang=pt-br",
+    "https://www.brasildefato.com.br/rss"
   ],
   "politicos": [
     {
