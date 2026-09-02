@@ -18,11 +18,12 @@ import argparse
 import os
 import sys
 import time
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
 from crawlers import fetch_many, dedupe
-from crawlers.registro import SOURCE_CATEGORIES, load_sources
+from crawlers.registro import SOURCE_CATEGORIES, load_sources, politico_search_urls
 from sanitize import sanitize_item, is_safe
 from synthesizer import synthesize_item
 
@@ -48,12 +49,24 @@ def build_client():
     return create_client(url, key)
 
 
+def _normalize_nome(nome: str) -> str:
+    """Minúsculas, sem acentos e sem espaços extra — para casar apelidos do LLM
+    ("Lula", "Flávio Bolsonaro") com termos de busca cadastrados ("lula", "flavio bolsonaro")."""
+    nf = unicodedata.normalize("NFD", nome or "")
+    sem_acento = "".join(c for c in nf if unicodedata.category(c) != "Mn")
+    return " ".join(sem_acento.lower().split())
+
+
 def list_active_politicos(client, cache: dict[str, int]):
-    """Carrega políticos ativos e preenche cache nome→id via SELECT."""
+    """Carrega políticos ativos e preenche cache nome→id, casando tanto o nome
+    completo quanto os termos_busca (apelidos) cadastrados, normalizados."""
     try:
-        resp = client.table("politicos").select("id,nome").eq("ativo", True).execute()
+        resp = client.table("politicos").select("id,nome,termos_busca").eq("ativo", True).execute()
         for row in resp.data or []:
-            cache[row["nome"].strip().lower()] = row["id"]
+            pid = row["id"]
+            cache[_normalize_nome(row["nome"])] = pid
+            for termo in row.get("termos_busca") or []:
+                cache[_normalize_nome(termo)] = pid
     except Exception:
         pass
 
@@ -82,7 +95,17 @@ def sort_items(items: list[dict]) -> list[dict]:
     return sorted(items, key=_key, reverse=True)
 
 
-def upsert_items(client, items: list[dict]) -> int:
+def resolve_politico_id(item: dict, politico_cache: dict[str, int]) -> int | None:
+    """Resolve o id do político principal citado no item (primeiro casado)."""
+    for name in item.get("envolvidos", []):
+        pid = politico_cache.get(_normalize_nome(name))
+        if pid:
+            return pid
+    return None
+
+
+def upsert_items(client, items: list[dict], politico_cache: dict[str, int] | None = None) -> int:
+    politico_cache = politico_cache or {}
     saved = 0
     for item in items:
         data = {
@@ -97,6 +120,7 @@ def upsert_items(client, items: list[dict]) -> int:
             "status": "publicado",
             "contradicao_detectada": bool(item.get("contradicao_detectada")),
             "contradicao_descricao": item.get("contradicao_descricao") or "",
+            "politico_id": resolve_politico_id(item, politico_cache),
             "metadata": {
                 "envolvidos": item.get("envolvidos", []),
                 "contradicao_referencias": item.get("contradicao_referencias", []),
@@ -122,13 +146,39 @@ def main(argv=None) -> int:
 
     sources = load_sources()
     cats = [c for c in args.sources.split(",") if c] or SOURCE_CATEGORIES
+
+    if args.dry_run:
+        print("[dry-run] Nenhum dado será gravado no banco.")
+        client = None
+    else:
+        try:
+            client = build_client()
+        except RuntimeError as exc:
+            print(f"[aviso] sem persistência: {exc}")
+            client = None
+
+    # Coleta dirigida por político (Google News RSS por termo): garante que cada
+    # candidato cadastrado tenha notícias na cobertura, mesmo sem feed dedicado.
+    politico_rows: list[dict] = []
+    if client:
+        try:
+            politico_rows = (
+                client.table("politicos")
+                .select("id,nome,termos_busca")
+                .eq("ativo", True)
+                .execute()
+                .data
+                or []
+            )
+        except Exception as exc:
+            print(f"[aviso] sem políticos para busca dirigida: {exc}")
+    if politico_rows and "politicos" in cats:
+        sources.by_category["politicos"] = politico_search_urls(politico_rows)
+
     urls = [u for c in cats for u in sources.by_category.get(c, [])]
     if not urls:
         print("Nenhum feed configurado. Veja scripts/feeds.json.")
         return 0
-
-    if args.dry_run:
-        print("[dry-run] Nenhum dado será gravado no banco.")
 
     raw = fetch_many(urls)
     items = dedupe(raw)
@@ -142,6 +192,7 @@ def main(argv=None) -> int:
             "oficiais": "oficial",
             "independentes": "oposicao",
             "imprensa": "imprensa",
+            "politicos": "imprensa",
         }.get(cat, "imprensa")
         safe.setdefault("categoria", "Outros")
         if is_safe(safe):
@@ -149,13 +200,6 @@ def main(argv=None) -> int:
 
     print(f"Coletados {len(cleaned)} itens limpos após sanitização.")
 
-    client = None
-    if not args.dry_run:
-        try:
-            client = build_client()
-        except RuntimeError as exc:
-            print(f"[aviso] sem persistência: {exc}")
-            client = None
 
     politico_cache: dict[str, int] = {}
     if client:
@@ -171,7 +215,7 @@ def main(argv=None) -> int:
                 break
             historico = []
             for name in item.get("envolvidos", []):
-                pid = politico_cache.get((name or "").strip().lower())
+                pid = politico_cache.get(_normalize_nome(name))
                 if pid:
                     historico = historico_de(client, pid) if client else []
             if item.get("status_sintese") != "ok":
@@ -195,7 +239,7 @@ def main(argv=None) -> int:
             print(f"  - {item['titulo'][:70]} | {item['tipo_fonte']} | {item.get('categoria')}")
         return 0
 
-    n = upsert_items(client, cleaned)
+    n = upsert_items(client, cleaned, politico_cache)
     print(f"Persistidas/atualizadas {n} notícias.")
     return 0
 

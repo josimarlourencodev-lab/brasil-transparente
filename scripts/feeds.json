@@ -18,13 +18,5 @@
     "https://theintercept.com/feed/?lang=pt-br",
     "https://www.brasildefato.com.br/rss"
   ],
-  "politicos": [
-    {
-      "nome": "",
-      "partido": "",
-      "cargo": "",
-      "atuacao": true,
-      "termos_busca": []
-    }
-  ]
+  "politicos": []
 }
