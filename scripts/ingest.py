@@ -112,6 +112,7 @@ def upsert_items(client, items: list[dict], politico_cache: dict[str, int] | Non
             "titulo": item["titulo"],
             "url": item["url"],
             "url_fonte": item.get("url"),
+            "imagem_url": item.get("imagem_url") or "",
             "resumo": item.get("resumo", ""),
             "categoria": item.get("categoria", "Outros"),
             "tipo_fonte": item.get("tipo_fonte", "imprensa"),

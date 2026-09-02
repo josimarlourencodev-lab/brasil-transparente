@@ -59,12 +59,14 @@ def clean_text(text: str) -> str:
 
 
 def sanitize_item(item: dict) -> dict:
-    """Aplica sanitização a um item de notícia (título, resumo, url)."""
+    """Aplica sanitização a um item de notícia (título, resumo, url, imagem)."""
     out = dict(item)
     out["titulo"] = clean_text(item.get("titulo", ""))
     out["url"] = clean_url(item.get("url", ""))
     if item.get("resumo"):
         out["resumo"] = clean_text(str(item["resumo"]))
+    if item.get("imagem_url"):
+        out["imagem_url"] = clean_url(str(item["imagem_url"]))
     return out
 
 

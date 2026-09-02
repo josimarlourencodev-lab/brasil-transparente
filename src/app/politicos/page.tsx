@@ -9,8 +9,17 @@ type Politico = {
   partido: string | null;
   cargo: string | null;
   biografia: string | null;
+  foto_url: string | null;
   termos_busca: string[] | null;
 };
+
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  return partes
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "?";
+}
 
 export default function PoliticosPage() {
   const [politicos, setPoliticos] = useState<Politico[]>([]);
@@ -62,12 +71,26 @@ export default function PoliticosPage() {
               className="rounded-xl border border-neutral-dark/10 bg-white p-6"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-primary">{p.nome}</h2>
-                  <p className="mt-1 text-sm text-neutral-dark/70">
-                    {p.partido}
-                    {p.cargo ? ` · ${p.cargo}` : ""}
-                  </p>
+                <div className="flex items-start gap-3">
+                  {p.foto_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.foto_url}
+                      alt={`Foto de ${p.nome}`}
+                      className="h-16 w-16 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                      {iniciais(p.nome)}
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-lg font-semibold text-primary">{p.nome}</h2>
+                    <p className="mt-1 text-sm text-neutral-dark/70">
+                      {p.partido}
+                      {p.cargo ? ` · ${p.cargo}` : ""}
+                    </p>
+                  </div>
                 </div>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                   {p.partido ?? "Sem partido"}

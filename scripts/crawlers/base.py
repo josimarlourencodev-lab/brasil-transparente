@@ -48,6 +48,51 @@ def _last_modified(item) -> str | None:
     return None
 
 
+def _first_url(container) -> str | None:
+    """Devolve a primeira URL de um elemento (attr src/href/url ou texto)."""
+    for attr in ("url", "src", "href"):
+        val = container.get(attr)
+        if val:
+            return str(val)
+    text = container.get_text().strip()
+    if text:
+        return text
+    return None
+
+
+def _item_image(item) -> str | None:
+    """Extrai a URL de imagem de um item de feed (media:content/thumbnail,
+    enclosure, image padrão ou qualquer elemento com atributo url)."""
+    candidates: list[str] = []
+    for name in ("media:content", "media:thumbnail"):
+        for el in item.find_all(name):
+            url = el.get("url")
+            if url:
+                candidates.append(str(url))
+    enc = item.find("enclosure")
+    if enc is not None and enc.get("type", "").startswith("image/"):
+        url = enc.get("url")
+        if url:
+            candidates.append(str(url))
+    img = item.find("image")
+    if img is not None:
+        url = _first_url(img)
+        if url:
+            candidates.append(url)
+    for el in item.find_all(True):
+        if el.name in ("media:content", "media:thumbnail", "enclosure", "image"):
+            continue
+        url = el.get("url")
+        if url:
+            candidates.append(str(url))
+            break
+    for cand in candidates:
+        cleaned = clean_url(cand)
+        if cleaned:
+            return cleaned
+    return None
+
+
 def parse_feed(content: bytes) -> list[dict]:
     """Converte bytes em itens {titulo, url, publicado_em} (RSS ou Atom)."""
     soup = BeautifulSoup(content, "lxml-xml")
@@ -75,7 +120,12 @@ def parse_feed(content: bytes) -> list[dict]:
 
         if title and url:
             results.append(
-                {"titulo": title, "url": url, "publicado_em": _last_modified(item)}
+                {
+                    "titulo": title,
+                    "url": url,
+                    "publicado_em": _last_modified(item),
+                    "imagem_url": _item_image(item),
+                }
             )
     return results
 

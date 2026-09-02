@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
   const { data, error } = await supabase()
     .from("politicos")
-    .select("id, nome, partido, cargo, biografia, termos_busca, criado_em")
+    .select("id, nome, partido, cargo, biografia, foto_url, termos_busca, criado_em")
     .eq("ativo", true)
     .order("nome", { ascending: true });
 

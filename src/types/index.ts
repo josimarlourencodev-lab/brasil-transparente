@@ -10,6 +10,7 @@ export interface Politico {
   ativo: boolean;
   termos_busca: string[];
   biografia?: string | null;
+  foto_url?: string | null;
   criado_em: string;
   atualizado_em: string;
 }
@@ -25,6 +26,8 @@ export interface Noticia {
   publicado_em?: string | null;
   coletado_em: string;
   status: StatusNoticia;
+  imagem_url?: string | null;
+  contradicao_detectada?: boolean | null;
   politico_id?: number | null;
   politica: Politico | null;
 }
