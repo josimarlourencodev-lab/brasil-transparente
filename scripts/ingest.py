@@ -82,7 +82,17 @@ def sort_items(items: list[dict]) -> list[dict]:
     return sorted(items, key=_key, reverse=True)
 
 
-def upsert_items(client, items: list[dict]) -> int:
+def resolve_politico_id(item: dict, politico_cache: dict[str, int]) -> int | None:
+    """Resolve o id do político principal citado no item (primeiro casado)."""
+    for name in item.get("envolvidos", []):
+        pid = politico_cache.get((name or "").strip().lower())
+        if pid:
+            return pid
+    return None
+
+
+def upsert_items(client, items: list[dict], politico_cache: dict[str, int] | None = None) -> int:
+    politico_cache = politico_cache or {}
     saved = 0
     for item in items:
         data = {
@@ -97,6 +107,7 @@ def upsert_items(client, items: list[dict]) -> int:
             "status": "publicado",
             "contradicao_detectada": bool(item.get("contradicao_detectada")),
             "contradicao_descricao": item.get("contradicao_descricao") or "",
+            "politico_id": resolve_politico_id(item, politico_cache),
             "metadata": {
                 "envolvidos": item.get("envolvidos", []),
                 "contradicao_referencias": item.get("contradicao_referencias", []),
@@ -195,7 +206,7 @@ def main(argv=None) -> int:
             print(f"  - {item['titulo'][:70]} | {item['tipo_fonte']} | {item.get('categoria')}")
         return 0
 
-    n = upsert_items(client, cleaned)
+    n = upsert_items(client, cleaned, politico_cache)
     print(f"Persistidas/atualizadas {n} notícias.")
     return 0
 
