@@ -27,10 +27,13 @@ jobs:
       - name: Instalar dependências (hashes verificados)
         run: |
           pip install --require-hashes -r scripts/requirements.txt
-          pip install pytest
+          python -c "import pytest" 2>/dev/null || pip install pytest
 
       - name: Auditoria OSV (dependências Pin)
         run: python scripts/security/check_osv.py -r scripts/requirements.txt
+
+      - name: Check de autenticidade leve (dependências)
+        run: python scripts/security/check_deps.py -r scripts/requirements.lock.txt
 
       - name: Testes de resiliência e integração (mock)
         run: python -m pytest
