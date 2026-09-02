@@ -5,4 +5,6 @@
 ## dependências são instaladas a partir do cache do pip (rápido) e a
 ## autenticidade é conferida ao iniciar o ciclo via scripts/security/check_deps.py,
 ## garantindo que os módulos carregados são os oficiais na versão pinada.
--r scripts/requirements.lock.txt
+##
+## Nota: -r é resolvido RELATIVO a este arquivo (que vive em scripts/).
+-r requirements.lock.txt
