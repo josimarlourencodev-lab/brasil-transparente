@@ -84,3 +84,34 @@ def test_dedup_por_url_preserva_ordem():
     assert len(unicos) == 2
     assert unicos[0]["titulo"] == "A"
     assert unicos[1]["titulo"] == "B"
+
+
+MEDIA_XML = """<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel>
+  <item>
+    <title>Reportagem com imagem</title>
+    <link>https://exemplo.gov.br/img</link>
+    <media:content url="https://cdn.exemplo.gov.br/foto.jpg" type="image/jpeg"/>
+  </item>
+</channel></rss>""".encode()
+
+DANGER_XML = """<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel>
+  <item>
+    <title>Imagem perigosa</title>
+    <link>https://exemplo.gov.br/danger</link>
+    <media:content url="javascript:alert(1)"/>
+  </item>
+</channel></rss>""".encode()
+
+
+def test_parse_extrai_imagem_de_media_content():
+    items = parse_feed(MEDIA_XML)
+    assert len(items) == 1
+    assert items[0]["imagem_url"] == "https://cdn.exemplo.gov.br/foto.jpg"
+
+
+def test_parse_descarta_imagem_com_esquema_perigoso():
+    items = parse_feed(DANGER_XML)
+    assert len(items) == 1
+    assert items[0]["imagem_url"] is None
