@@ -116,6 +116,53 @@ def _parse_response(provider: str, resp: dict) -> dict | None:
         return None
 
 
+MAX_ATTEMPTS = 4
+RATE_LIMIT_MAX_ATTEMPTS = 5
+BACKOFF_BASE_SECONDS = 2
+BACKOFF_MAX_SECONDS = 60
+
+
+def _email_date_to_epoch(value: str) -> float | None:
+    """Converte uma data HTTP (RFC 7231) no header Retry-After para epoch."""
+    try:
+        import email.utils
+
+        parsed = email.utils.parsedate_to_datetime(value)
+        if parsed is None:
+            return None
+        return parsed.timestamp()
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _retry_after_seconds(resp) -> float | None:
+    """Deriva segundos de espera a partir dos headers de rate limit, se houver."""
+    raw = resp.headers.get("Retry-After")
+    if raw:
+        raw = raw.strip()
+        try:
+            return float(raw)
+        except ValueError:
+            epoch = _email_date_to_epoch(raw)
+            if epoch is not None:
+                return max(0.0, epoch - time.time())
+    reset = resp.headers.get("x-ratelimit-reset")
+    if reset:
+        try:
+            reset_ms = float(reset)
+            eta = reset_ms if reset_ms > 1e12 else reset_ms * 1000
+            return max(0.0, (eta - time.time() * 1000) / 1000.0)
+        except ValueError:
+            pass
+    return None
+
+
+def _backoff_seconds(attempt: int, retry_after: float | None) -> float:
+    if retry_after is not None:
+        return min(retry_after + 0.5, BACKOFF_MAX_SECONDS)
+    return min(BACKOFF_BASE_SECONDS * (2**attempt), BACKOFF_MAX_SECONDS)
+
+
 def _call(provider: str, user_prompt: str) -> dict | None:
     if provider == "gemini":
         url = GEMINI_ENDPOINT.format(model=_model(provider))
@@ -127,7 +174,9 @@ def _call(provider: str, user_prompt: str) -> dict | None:
     payload = _payload(provider, user_prompt)
 
     last_status: int | None = None
-    for attempt in range(3):
+    attempts = 0
+    while True:
+        attempts += 1
         try:
             resp = requests.post(
                 url,
@@ -137,23 +186,48 @@ def _call(provider: str, user_prompt: str) -> dict | None:
                 timeout=TIMEOUT_SECONDS,
             )
         except requests.RequestException as exc:
-            print(f"[llm] tentativa {attempt + 1} rede: {exc}")
-            time.sleep(2 * (attempt + 1))
+            print(f"[llm] tentativa {attempts} rede: {exc}")
+            if attempts >= MAX_ATTEMPTS:
+                break
+            time.sleep(_backoff_seconds(attempts - 1, None))
             continue
 
         last_status = resp.status_code
+
+        if resp.status_code == 429:
+            retry_after = _retry_after_seconds(resp)
+            if attempts >= RATE_LIMIT_MAX_ATTEMPTS:
+                print(f"[llm] falha definitiva por rate limit (tentativa {attempts})")
+                break
+            if retry_after:
+                print(f"[llm] rate limit — aguardando {retry_after:.0f}s (tentativa {attempts + 1})")
+            else:
+                print(f"[llm] status 429 sem Retry-After (tentativa {attempts})")
+            time.sleep(_backoff_seconds(attempts - 1, retry_after))
+            continue
+
         if resp.ok:
             try:
                 data = resp.json()
             except ValueError:
-                print(f"[llm] resposta não-JSON (tentativa {attempt + 1})")
-                time.sleep(2 * (attempt + 1))
+                print(f"[llm] resposta não-JSON (tentativa {attempts})")
+                if attempts >= MAX_ATTEMPTS:
+                    break
+                time.sleep(_backoff_seconds(attempts - 1, None))
                 continue
             parsed = _parse_response(provider, data)
             if parsed is not None:
                 return parsed
-        print(f"[llm] status {resp.status_code} (tentativa {attempt + 1})")
-        time.sleep(2 * (attempt + 1))
+            print(f"[llm] JSON sem conteúdo utilizável (tentativa {attempts})")
+            if attempts >= MAX_ATTEMPTS:
+                break
+            time.sleep(_backoff_seconds(attempts - 1, None))
+            continue
+
+        print(f"[llm] status {resp.status_code} (tentativa {attempts})")
+        if attempts >= MAX_ATTEMPTS:
+            break
+        time.sleep(_backoff_seconds(attempts - 1, None))
 
     print(f"[llm] falha definitiva (último status {last_status})")
     return None

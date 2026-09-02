@@ -205,11 +205,26 @@ def main(argv=None) -> int:
     if client:
         list_active_politicos(client, politico_cache)
 
+    # Prioriza a síntese das notícias dirigidas por político (Google News por
+    # termo): são as que alimentam a associação politico_id, até o limite por
+    # execução. As demais categorias entram em seguida, na ordem de chegada.
+    if os.environ.get("LLM_API_KEY"):
+        orde = list(enumerate(cleaned))
+        orde.sort(
+            key=lambda t: (
+                0 if sources.category_of(feed_url=t[1].get("_url_feed", "")) == "politicos" else 1,
+                t[0],
+            )
+        )
+        ordered_cleaned = [item for _, item in orde]
+    else:
+        ordered_cleaned = cleaned
+
     synthesized = 0
     max_syntheses = int(os.environ.get("MAX_SYNTHESIS_PER_RUN", "80"))
 
     if os.environ.get("LLM_API_KEY"):
-        for idx, item in enumerate(cleaned):
+        for item in ordered_cleaned:
             if synthesized >= max_syntheses:
                 print(f"[throttle] limite de {max_syntheses} sínteses por execução atingido.")
                 break
