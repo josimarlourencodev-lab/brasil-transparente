@@ -12,6 +12,7 @@ type Noticia = {
   tipo_fonte: string;
   publicado_em: string | null;
   url: string;
+  imagem_url: string | null;
   politica: {
     id: number;
     nome: string;
@@ -131,38 +132,48 @@ export function NoticiasContent() {
             {noticias.map((n) => (
               <article
                 key={n.id}
-                className="rounded-xl border border-neutral-dark/10 bg-white p-6"
+                className="flex gap-5 rounded-xl border border-neutral-dark/10 bg-white p-6"
               >
-                <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-                  <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
-                    {n.categoria}
-                  </span>
-                  <span>{n.tipo_fonte}</span>
-                  {n.politica && (
-                    <span className="rounded-full bg-accent/10 px-3 py-1 font-medium text-accent">
-                      {n.politica.nome}
+                {n.imagem_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={n.imagem_url}
+                    alt=""
+                    className="hidden h-28 w-40 shrink-0 rounded-lg object-cover sm:block"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
+                    <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
+                      {n.categoria}
                     </span>
+                    <span>{n.tipo_fonte}</span>
+                    {n.politica && (
+                      <span className="rounded-full bg-accent/10 px-3 py-1 font-medium text-accent">
+                        {n.politica.nome}
+                      </span>
+                    )}
+                    {n.publicado_em && (
+                      <time dateTime={n.publicado_em}>
+                        {new Date(n.publicado_em).toLocaleDateString("pt-BR")}
+                      </time>
+                    )}
+                  </div>
+                  <h2 className="mt-3 text-lg font-semibold">{n.titulo}</h2>
+                  {n.resumo && (
+                    <p className="mt-2 text-sm text-neutral-dark/70">{n.resumo}</p>
                   )}
-                  {n.publicado_em && (
-                    <time dateTime={n.publicado_em}>
-                      {new Date(n.publicado_em).toLocaleDateString("pt-BR")}
-                    </time>
+                  {n.url && (
+                    <a
+                      href={n.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 block truncate text-xs text-accent hover:underline"
+                    >
+                      {n.url}
+                    </a>
                   )}
                 </div>
-                <h2 className="mt-3 text-lg font-semibold">{n.titulo}</h2>
-                {n.resumo && (
-                  <p className="mt-2 text-sm text-neutral-dark/70">{n.resumo}</p>
-                )}
-                {n.url && (
-                  <a
-                    href={n.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 block truncate text-xs text-accent hover:underline"
-                  >
-                    {n.url}
-                  </a>
-                )}
               </article>
             ))}
 
