@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 
 import requests
 
@@ -124,14 +125,38 @@ def _call(provider: str, user_prompt: str) -> dict | None:
         return None
     params = {"key": os.environ.get("LLM_API_KEY", "")} if provider == "gemini" else None
     payload = _payload(provider, user_prompt)
-    resp = requests.post(url, headers=_headers(provider), json=payload, params=params, timeout=TIMEOUT_SECONDS)
-    if not resp.ok:
-        return None
-    try:
-        data = resp.json()
-    except ValueError:
-        return None
-    return _parse_response(provider, data)
+
+    last_status: int | None = None
+    for attempt in range(3):
+        try:
+            resp = requests.post(
+                url,
+                headers=_headers(provider),
+                json=payload,
+                params=params,
+                timeout=TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            print(f"[llm] tentativa {attempt + 1} rede: {exc}")
+            time.sleep(2 * (attempt + 1))
+            continue
+
+        last_status = resp.status_code
+        if resp.ok:
+            try:
+                data = resp.json()
+            except ValueError:
+                print(f"[llm] resposta não-JSON (tentativa {attempt + 1})")
+                time.sleep(2 * (attempt + 1))
+                continue
+            parsed = _parse_response(provider, data)
+            if parsed is not None:
+                return parsed
+        print(f"[llm] status {resp.status_code} (tentativa {attempt + 1})")
+        time.sleep(2 * (attempt + 1))
+
+    print(f"[llm] falha definitiva (último status {last_status})")
+    return None
 
 
 def build_user_prompt(item: dict, historico: list[dict] | None = None) -> str:
