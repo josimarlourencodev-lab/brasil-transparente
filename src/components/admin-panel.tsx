@@ -1,7 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Box,
+  Button,
+  Chip,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 
 type AdminNoticia = {
   id: number;
@@ -22,6 +33,22 @@ const FORM_INICIAL = {
   resumo: "",
   categoria: "",
   imagem_url: "",
+};
+
+const theme = createTheme({
+  palette: {
+    mode: "dark",
+    primary: { main: "#1E6FB8" },
+    secondary: { main: "#E53935" },
+    background: { default: "#121212", paper: "#1E1E1E" },
+  },
+});
+
+const STATUS_COLOR: Record<string, "success" | "warning" | "default" | "error"> = {
+  publicado: "success",
+  revisao: "warning",
+  rascunho: "default",
+  rejeitado: "error",
 };
 
 export function AdminPanel() {
@@ -114,145 +141,195 @@ export function AdminPanel() {
     }
   }
 
+  const columns = useMemo<GridColDef<AdminNoticia>[]>(
+    () => [
+      {
+        field: "titulo",
+        headerName: "Título",
+        flex: 2,
+        minWidth: 260,
+      },
+      { field: "categoria", headerName: "Categoria", width: 140 },
+      { field: "tipo_fonte", headerName: "Fonte", width: 140 },
+      {
+        field: "status",
+        headerName: "Status",
+        width: 130,
+        renderCell: (params) => (
+          <Chip
+            size="small"
+            label={params.value}
+            color={STATUS_COLOR[params.value as string] ?? "default"}
+            variant="outlined"
+          />
+        ),
+      },
+      {
+        field: "publicado_em",
+        headerName: "Publicado",
+        width: 120,
+        valueGetter: (value: string | null) =>
+          value ? new Date(value).toLocaleDateString("pt-BR") : "—",
+      },
+      {
+        field: "contradicao_detectada",
+        headerName: "Contradição",
+        width: 120,
+        valueGetter: (value: boolean) => (value ? "sim" : "não"),
+      },
+      {
+        field: "acoes",
+        headerName: "",
+        width: 100,
+        sortable: false,
+        filterable: false,
+        renderCell: (params) => (
+          <Button
+            size="small"
+            color="error"
+            onClick={() => remover(params.row)}
+          >
+            Remover
+          </Button>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   return (
-    <div className="min-h-screen bg-neutral-dark text-white">
-      <div className="container-page py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-accent-light">
+    <ThemeProvider theme={theme}>
+      <Box sx={{ minHeight: "100vh", bgcolor: "background.default", pt: 4, pb: 10 }}>
+        <Stack
+          sx={{
+            mb: 3,
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: 2,
+          }}
+        >
+          <Typography variant="h5" component="h1" color="text.primary">
             Painel do Administrador / Auditor
-          </h1>
-          <button
+          </Typography>
+          <Button
+            variant="outlined"
+            color="inherit"
             onClick={async () => {
               await fetch("/api/admin/logout", { method: "POST" });
               router.refresh();
             }}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/70 hover:text-white"
           >
             Sair
-          </button>
-        </div>
+          </Button>
+        </Stack>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button
+        <Stack
+          direction="row"
+          sx={{ mb: 3, flexWrap: "wrap", gap: 1 }}
+        >
+          <Button
+            size="small"
+            variant={status === "" ? "contained" : "text"}
             onClick={() => setStatus("")}
-            className={`rounded-full px-3 py-1 text-sm ${status === "" ? "bg-accent text-white" : "border border-white/15 text-white/70"}`}
           >
             todas
-          </button>
+          </Button>
           {STATUS.map((s) => (
-            <button
+            <Button
               key={s}
+              size="small"
+              variant={status === s ? "contained" : "text"}
               onClick={() => setStatus(s)}
-              className={`rounded-full px-3 py-1 text-sm ${status === s ? "bg-accent text-white" : "border border-white/15 text-white/70"}`}
             >
               {s}
-            </button>
+            </Button>
           ))}
-        </div>
+        </Stack>
 
-        {erro ? <p className="mt-4 text-sm text-red-400">{erro}</p> : null}
+        {erro ? <Typography color="error" sx={{ fontSize: "0.875rem", mb: 2 }}>{erro}</Typography> : null}
 
-        <form
+        <Paper
+          component="form"
           onSubmit={adicionar}
-          className="mt-6 grid gap-3 rounded-xl border border-white/10 bg-white/5 p-4 sm:grid-cols-2"
+          sx={{ p: 2.5, mb: 3 }}
+          elevation={0}
+          variant="outlined"
         >
-          <h2 className="text-sm font-semibold text-white/80 sm:col-span-2">
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
             Adicionar matéria
-          </h2>
-          <input
-            value={form.titulo}
-            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-            placeholder="Título"
-            required
-            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-accent"
-          />
-          <input
-            value={form.url}
-            onChange={(e) => setForm({ ...form, url: e.target.value })}
-            placeholder="URL (http:// ou https://)"
-            required
-            type="url"
-            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-accent"
-          />
-          <input
-            value={form.resumo}
-            onChange={(e) => setForm({ ...form, resumo: e.target.value })}
-            placeholder="Resumo (opcional)"
-            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-accent sm:col-span-2"
-          />
-          <input
-            value={form.categoria}
-            onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-            placeholder="Categoria (padrão: Outros)"
-            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-accent"
-          />
-          <input
-            value={form.imagem_url}
-            onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
-            placeholder="URL da imagem (opcional)"
-            type="url"
-            className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-accent"
-          />
-          <button
-            type="submit"
-            disabled={salvando}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 sm:col-span-2"
-          >
-            {salvando ? "Salvando…" : "Adicionar matéria"}
-          </button>
-        </form>
+          </Typography>
+          <Stack spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                value={form.titulo}
+                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                label="Título"
+                required
+                size="small"
+                fullWidth
+              />
+              <TextField
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                label="URL (http:// ou https://)"
+                required
+                type="url"
+                size="small"
+                fullWidth
+              />
+            </Stack>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                value={form.resumo}
+                onChange={(e) => setForm({ ...form, resumo: e.target.value })}
+                label="Resumo (opcional)"
+                size="small"
+                fullWidth
+              />
+              <TextField
+                value={form.categoria}
+                onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                label="Categoria (padrão: Outros)"
+                size="small"
+                fullWidth
+              />
+              <TextField
+                value={form.imagem_url}
+                onChange={(e) => setForm({ ...form, imagem_url: e.target.value })}
+                label="URL da imagem (opcional)"
+                type="url"
+                size="small"
+                fullWidth
+              />
+            </Stack>
+            <Box>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={salvando}
+              >
+                {salvando ? "Salvando…" : "Adicionar matéria"}
+              </Button>
+            </Box>
+          </Stack>
+        </Paper>
 
-        <div className="mt-6 overflow-x-auto rounded-xl border border-white/10">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-white/10 text-white/50">
-              <tr>
-                <th className="p-3">Título</th>
-                <th className="p-3">Categoria</th>
-                <th className="p-3">Fonte</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Publicado</th>
-                <th className="p-3">Contradição</th>
-                <th className="p-3" aria-label="Ações" />
-              </tr>
-            </thead>
-            <tbody>
-              {noticias.map((n) => (
-                <tr key={n.id} className="border-b border-white/5">
-                  <td className="p-3 text-white/90">{n.titulo}</td>
-                  <td className="p-3 text-white/60">{n.categoria}</td>
-                  <td className="p-3 text-white/60">{n.tipo_fonte}</td>
-                  <td className="p-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        n.status === "publicado"
-                          ? "bg-green-500/20 text-green-300"
-                          : n.status === "revisao"
-                            ? "bg-yellow-500/20 text-yellow-300"
-                            : "bg-white/10 text-white/60"
-                      }`}
-                    >
-                      {n.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-white/60">{n.publicado_em ?? "—"}</td>
-                  <td className="p-3">{n.contradicao_detectada ? "sim" : "não"}</td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => remover(n)}
-                      className="rounded-md border border-red-400/40 px-2 py-1 text-xs text-red-300 hover:bg-red-400/10"
-                    >
-                      Remover
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {noticias.length === 0 ? (
-            <p className="p-4 text-white/50">Nenhuma matéria encontrada.</p>
-          ) : null}
-        </div>
-      </div>
-    </div>
+        <Paper elevation={0} variant="outlined" sx={{ height: 520, width: "100%" }}>
+          <DataGrid
+            rows={noticias}
+            columns={columns}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 20 } },
+            }}
+            pageSizeOptions={[10, 20, 50]}
+            disableRowSelectionOnClick
+            getRowHeight={() => "auto"}
+            localeText={{ noRowsLabel: "Nenhuma matéria encontrada." }}
+          />
+        </Paper>
+      </Box>
+    </ThemeProvider>
   );
 }

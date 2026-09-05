@@ -11,4 +11,20 @@ export interface Noticia {
   status: string;
   contradicao_detectada?: boolean;
   contradicao_descricao?: string | null;
+  politico_id?: number | null;
+  imagem_url?: string | null;
+}
+
+export interface Politico {
+  id: number;
+  nome: string;
+  partido: string | null;
+  cargo: string | null;
+  biografia: string | null;
+  foto_url: string | null;
+  termos_busca: string[] | null;
+}
+
+export interface NoticiaComPolitico extends Noticia {
+  politico?: Pick<Politico, "id" | "nome" | "partido" | "foto_url"> | null;
 }

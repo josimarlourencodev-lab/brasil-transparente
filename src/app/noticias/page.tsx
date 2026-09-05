@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -69,22 +68,10 @@ export function NoticiasContent() {
 
   return (
     <div className="min-h-screen">
-      <nav className="border-b border-neutral-dark/10 bg-white">
-        <div className="container-page flex items-center justify-between py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-            Brasil<span className="text-accent"> Transparente</span>
-          </Link>
-          <Link
-            href="/politicos"
-            className="text-sm text-neutral-dark/70 hover:text-primary"
-          >
-            Políticos
-          </Link>
-        </div>
-      </nav>
-
       <main className="container-page py-12">
-        <h1 className="text-3xl font-bold text-primary">Notícias monitoradas</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+          Notícias monitoradas
+        </h1>
         <p className="mt-2 text-neutral-dark/70">
           Matérias coletadas de fontes oficiais e de oposição, com referências primárias.
         </p>
@@ -132,24 +119,24 @@ export function NoticiasContent() {
             {noticias.map((n) => (
               <article
                 key={n.id}
-                className="flex gap-5 rounded-xl border border-neutral-dark/10 bg-white p-6"
+                className="card flex flex-col gap-5 p-6 sm:flex-row"
               >
                 {n.imagem_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={n.imagem_url}
                     alt=""
-                    className="hidden h-28 w-40 shrink-0 rounded-lg object-cover sm:block"
+                    className="h-32 w-full shrink-0 rounded-lg object-cover sm:h-28 sm:w-40"
                   />
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-                    <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
+                    <span className="chip bg-primary/10 text-primary">
                       {n.categoria}
                     </span>
                     <span>{n.tipo_fonte}</span>
                     {n.politica && (
-                      <span className="rounded-full bg-accent/10 px-3 py-1 font-medium text-accent">
+                      <span className="chip bg-accent/10 text-accent">
                         {n.politica.nome}
                       </span>
                     )}
@@ -195,18 +182,9 @@ export default function NoticiasPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen">
-          <nav className="border-b border-neutral-dark/10 bg-white">
-            <div className="container-page flex items-center justify-between py-4">
-              <span className="text-xl font-bold tracking-tight text-primary">
-                Brasil<span className="text-accent"> Transparente</span>
-              </span>
-            </div>
-          </nav>
-          <main className="container-page py-12">
-            <p className="text-sm text-neutral-dark/60">Carregando…</p>
-          </main>
-        </div>
+        <main className="container-page py-12">
+          <p className="text-sm text-neutral-dark/60">Carregando…</p>
+        </main>
       }
     >
       <NoticiasContent />
