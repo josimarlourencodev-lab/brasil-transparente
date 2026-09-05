@@ -24,6 +24,9 @@
     "extra": {
       "supabaseUrl": "http://localhost:54321",
       "supabaseAnonKey": ""
-    }
+    },
+    "plugins": [
+      "expo-audio"
+    ]
   }
 }

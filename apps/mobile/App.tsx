@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { DetalheNoticiaScreen } from "./src/screens/DetalheNoticiaScreen";
 import { DetalhePoliticoScreen } from "./src/screens/DetalhePoliticoScreen";
 import { NewsScreen } from "./src/screens/NewsScreen";
+import { PodcastScreen } from "./src/screens/PodcastScreen";
 import { PoliticosScreen } from "./src/screens/PoliticosScreen";
 import type { RootStackParamList, TabParamList } from "./src/navigation/types";
 
@@ -39,6 +40,14 @@ function Tabs() {
         options={{
           title: "Políticos",
           tabBarIcon: ({ color }) => <Ionicons name="person-circle-outline" color={color} size={22} />,
+        }}
+      />
+      <Tab.Screen
+        name="Podcast"
+        component={PodcastScreen}
+        options={{
+          title: "Podcast",
+          tabBarIcon: ({ color }) => <Ionicons name="mic-outline" color={color} size={22} />,
         }}
       />
     </Tab.Navigator>
