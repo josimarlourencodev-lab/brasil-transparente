@@ -7,6 +7,7 @@ import { useState } from "react";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { Drawer, IconButton } from "@mui/material";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavItem = {
   href: Route;
@@ -34,9 +35,9 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-dark/10 bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-neutral-dark/10 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-neutral-night/85">
       <div className="container-page flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-primary">
+        <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-primary dark:text-primary-light">
           <span
             aria-hidden
             className="h-2.5 w-2.5 rounded-sm bg-accent"
@@ -51,8 +52,8 @@ export function SiteHeader() {
               href={item.href}
               className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                 ativo(item.href)
-                  ? "bg-primary/10 text-primary"
-                  : "text-neutral-dark/70 hover:bg-neutral-dark/5 hover:text-primary"
+                  ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
+                  : "text-neutral-dark/70 hover:bg-neutral-dark/5 hover:text-primary dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-primary-light"
               }`}
             >
               {item.label}
@@ -61,13 +62,14 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/noticias" className="btn-primary hidden sm:inline-flex">
             Acompanhar cobertura
           </Link>
           <IconButton
             aria-label="Abrir menu de navegação"
             onClick={() => setAbertoNa(pathname)}
-            className="md:hidden"
+            className="md:hidden dark:text-neutral-200"
             size="small"
           >
             <MenuIcon />
@@ -97,8 +99,8 @@ export function SiteHeader() {
               onClick={() => setAbertoNa(null)}
               className={`rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 ativo(item.href)
-                  ? "bg-primary/10 text-primary"
-                  : "text-neutral-dark/70 hover:bg-neutral-dark/5 hover:text-primary"
+                  ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light"
+                  : "text-neutral-dark/70 hover:bg-neutral-dark/5 hover:text-primary dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-primary-light"
               }`}
             >
               {item.label}
