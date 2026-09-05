@@ -7,4 +7,5 @@ export type RootStackParamList = {
 export type TabParamList = {
   Noticias: undefined;
   Politicos: undefined;
+  Podcast: undefined;
 };

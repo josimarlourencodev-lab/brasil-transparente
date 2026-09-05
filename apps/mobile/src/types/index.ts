@@ -28,3 +28,12 @@ export interface Politico {
 export interface NoticiaComPolitico extends Noticia {
   politico?: Pick<Politico, "id" | "nome" | "partido" | "foto_url"> | null;
 }
+
+export interface PodcastEpisodio {
+  id: number;
+  titulo: string;
+  descricao: string | null;
+  audio_url: string;
+  duracao_seg: number | null;
+  publicado_em: string | null;
+}

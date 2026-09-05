@@ -1,0 +1,14 @@
+# Expo / React Native
+.expo/
+dist/
+web-build/
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+*.jks.txt
+*.orig
+.env*.local
