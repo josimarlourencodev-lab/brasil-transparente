@@ -4,8 +4,9 @@ Fluxo:
   1. Busca as notícias publicadas e sintetizadas dos últimos 7 dias.
   2. Gera o roteiro editorial (neutro, em PT-BR) usando um modelo LLM DA GROQ
      DIFERENTE do modelo de síntese diária — report padrão
-     `qwen/qwen3.8-27b` (via PODCAST_LLM_MODEL). Isso isola a cota/rate limit
-     da síntese de notícias (que usa openai/gpt-oss-20b).
+     `openai/gpt-oss-120b` (via PODCAST_LLM_MODEL; gera roteiro longo em uma
+     única chamada na cesta de 8000 tokens/min). Isso isola a cota/rate
+     limit da síntese de notícias (que usa openai/gpt-oss-20b).
   3. Converte o roteiro em áudio PT-BR com edge-tts (TTS gratuito, rede MS Edge;
      não tem custo nem consome a cota da Groq).
   4. Faz upload do MP3 no bucket público `podcast` do Supabase e registra o
@@ -37,24 +38,30 @@ import requests
 from synthesizer import _headers
 
 TTS_VOICE_PADRAO = "pt-BR-FranciscaNeural"
-LLM_MODEL_PADRAO = "qwen/qwen3.8-27b"
+LLM_MODEL_PADRAO = "openai/gpt-oss-120b"
 DIAS_PADRAO = 7
-MAX_NOTICIAS = 8
+MAX_NOTICIAS = 20
 
 ROTEIRO_SYSTEM = (
     """Você é o redator de roteiros do podcast semanal do Brasil Transparente, um portal \
 neutro e independente de monitoramento político brasileiro.
 
-Produza um texto falado em português do Brasil, com duração de leitura entre 90 e 150 \
-segundos (aprox. 240 a 400 palavras), seguindo este formato:
+Produza um texto falado em português do Brasil com duração de 15 a 18 minutos (2200 a \
+2600 palavras). Obrigatório atingir essa extensão.
 
-Abertura: "Você está ouvindo o Brasil Transparente, sua síntese semanal da verdade na \
-política brasileira."
-Corpo: apresente até 4 destaques da semana com imparcialidade total — sem opinião, sem \
-adjetivos valorativos, sem partidarismo, sem especulação. Diga apenas o que está nas \
-notícias fornecidas, citando os envolvidos por nome completo e o veículo quando relevante.
-Desfecho: "Acompanhe o Brasil Transparente para continuar acompanhando os bastidores da \
-política."
+Formato:
+- Abertura: "Você está ouvindo o Brasil Transparente, sua síntese semanal da verdade na \
+política brasileira." e uma frase de contexto.
+- 10 a 12 capítulos numerados ("Capítulo 1 — ..."), cada um com 250 a 330 palavras, \
+cobrindo fatos reais das notícias fornecidas. Se houver poucas notícias, desenvolva o \
+contexto de cada fato mantendo a extensão exigida.
+- Encerramento: resumo final de 5 a 8 frases dos pontos mais importantes.
+- Desfecho fixo: "Acompanhe o Brasil Transparente para continuar acompanhando os \
+bastidores da política."
+
+Regras: total imparcialidade, sem opinião, sem adjetivos valorativos, sem partidarismo, \
+sem especulação. Diga apenas o que está nas notícias, citando os envolvidos por nome \
+completo, a data e o veículo quando relevante.
 
 Retorne APENAS o texto do roteiro pronto para locução, sem aspas, sem marcação, sem JSON."""
 )
@@ -100,8 +107,9 @@ def _gerar_roteiro(noticias: list[dict]) -> str | None:
             }
         )
     user_prompt = (
-        "Aqui estão as notícias monitoradas na última semana. Escreva o roteiro do "
-        "episódio seguindo exatamente o formato do prompt de sistema.\n\n"
+        "Aqui estão as notícias monitoradas na última semana. Escreva o roteiro completo "
+        "do episódio de hoje (duração de leitura de 15 a 18 minutos, com capítulos para os "
+        "destaques abaixo), seguindo exatamente o formato do prompt de sistema.\n\n"
         + json.dumps(itens, ensure_ascii=False)
     )
 
@@ -112,13 +120,14 @@ def _gerar_roteiro(noticias: list[dict]) -> str | None:
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.7,
+        "max_tokens": 7000,
     }
 
     resp = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers=_headers(provider),
         json=payload,
-        timeout=90,
+        timeout=300,
     )
     if not resp.ok:
         print(f"[podcast] LLM falhou: status {resp.status_code} — {resp.text[:200]}")
