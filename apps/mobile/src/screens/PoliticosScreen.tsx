@@ -3,27 +3,26 @@ import { ActivityIndicator, FlatList, RefreshControl, View } from "react-native"
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppHeader } from "../components/Header";
-import { NoticiaCard } from "../components/NoticiaCard";
+import { PoliticoCard } from "../components/PoliticoCard";
 import { supabase } from "../lib/supabase";
 import { Cores, Espacamento } from "../theme";
-import type { NoticiaComPolitico } from "../types";
+import type { Politico } from "../types";
 import type { RootStackParamList } from "../navigation/types";
 
-export function NewsScreen() {
+export function PoliticosScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [noticias, setNoticias] = useState<NoticiaComPolitico[]>([]);
+  const [politicos, setPoliticos] = useState<Politico[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   async function carregar() {
     const { data, error } = await supabase
-      .from("noticias")
-      .select("*, politico:politico_id(id, nome, partido, foto_url)")
-      .eq("status", "publicado")
-      .order("publicado_em", { ascending: false })
-      .limit(50);
-    if (!error) setNoticias(data ?? []);
+      .from("politicos")
+      .select("*")
+      .eq("ativo", true)
+      .order("nome");
+    if (!error) setPoliticos(data ?? []);
   }
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export function NewsScreen() {
         />
       ) : (
         <FlatList
-          data={noticias}
+          data={politicos}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{
             padding: Espacamento.md,
@@ -65,10 +64,10 @@ export function NewsScreen() {
             />
           }
           renderItem={({ item }) => (
-            <NoticiaCard
-              noticia={item}
+            <PoliticoCard
+              politico={item}
               onPress={() =>
-                navigation.navigate("DetalheNoticia", { id: item.id })
+                navigation.navigate("DetalhePolitico", { id: item.id })
               }
             />
           )}

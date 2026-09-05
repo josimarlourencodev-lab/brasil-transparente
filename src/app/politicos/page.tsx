@@ -37,22 +37,10 @@ export default function PoliticosPage() {
 
   return (
     <div className="min-h-screen">
-      <nav className="border-b border-neutral-dark/10 bg-white">
-        <div className="container-page flex items-center justify-between py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-            Brasil<span className="text-accent"> Transparente</span>
-          </Link>
-          <Link
-            href="/noticias"
-            className="text-sm text-neutral-dark/70 hover:text-primary"
-          >
-            Notícias
-          </Link>
-        </div>
-      </nav>
-
       <main className="container-page py-12">
-        <h1 className="text-3xl font-bold text-primary">Políticos monitorados</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+          Políticos monitorados
+        </h1>
         <p className="mt-2 text-neutral-dark/70">
           Histórico contextualizado com casos, contradições e posições documentados ao
           longo do tempo.
@@ -64,62 +52,67 @@ export default function PoliticosPage() {
           </p>
         )}
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           {politicos.map((p) => (
             <article
               key={p.id}
-              className="rounded-xl border border-neutral-dark/10 bg-white p-6"
+              className="card p-6 transition-shadow hover:shadow-glow"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  {p.foto_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.foto_url}
-                      alt={`Foto de ${p.nome}`}
-                      className="h-16 w-16 shrink-0 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                      {iniciais(p.nome)}
+              <Link href={`/politicos/${p.id}`} className="block">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    {p.foto_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.foto_url}
+                        alt={`Foto de ${p.nome}`}
+                        className="h-16 w-16 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                        {iniciais(p.nome)}
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="text-lg font-semibold text-primary">{p.nome}</h2>
+                      <p className="mt-1 text-sm text-neutral-dark/70">
+                        {p.partido}
+                        {p.cargo ? ` · ${p.cargo}` : ""}
+                      </p>
                     </div>
-                  )}
-                  <div>
-                    <h2 className="text-lg font-semibold text-primary">{p.nome}</h2>
-                    <p className="mt-1 text-sm text-neutral-dark/70">
-                      {p.partido}
-                      {p.cargo ? ` · ${p.cargo}` : ""}
-                    </p>
                   </div>
+                  <span className="chip bg-primary/10 text-primary">
+                    {p.partido ?? "Sem partido"}
+                  </span>
                 </div>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  {p.partido ?? "Sem partido"}
-                </span>
-              </div>
 
-              {p.biografia && (
-                <p className="mt-3 text-sm text-neutral-dark/70">{p.biografia}</p>
-              )}
+                {p.biografia && (
+                  <p className="mt-3 text-sm text-neutral-dark/70">{p.biografia}</p>
+                )}
 
-              {p.termos_busca && p.termos_busca.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {p.termos_busca.map((t) => (
-                    <span
-                      key={t}
-                      className="rounded-full bg-neutral-dark/5 px-2.5 py-0.5 text-xs text-neutral-dark/80"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <Link
-                href={`/noticias?q=${encodeURIComponent(p.nome)}`}
-                className="mt-4 inline-block text-sm font-medium text-accent hover:underline"
-              >
-                Ver notícias →
+                {p.termos_busca && p.termos_busca.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {p.termos_busca.map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-full bg-neutral-dark/5 px-2.5 py-0.5 text-xs text-neutral-dark/80"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </Link>
+
+              <div className="mt-4 flex items-center gap-4 text-sm font-medium">
+                <span className="text-accent hover:underline">Ver perfil →</span>
+                <Link
+                  href={`/noticias?q=${encodeURIComponent(p.nome)}`}
+                  className="text-neutral-dark/60 hover:text-primary hover:underline"
+                >
+                  Ver notícias →
+                </Link>
+              </div>
             </article>
           ))}
         </div>
