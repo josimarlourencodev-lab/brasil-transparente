@@ -41,7 +41,7 @@ const ETAPAS = [
 export function HomeContent() {
   return (
     <>
-      <section className="relative overflow-hidden bg-white">
+      <section className="relative overflow-hidden bg-white dark:bg-neutral-night">
         <div className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.04]">
           <div className="h-full w-full bg-[radial-gradient(circle_at_center,transparent_0,transparent_40%,#0F4C81_40%,#0F4C81_100%)]" />
         </div>
@@ -49,7 +49,7 @@ export function HomeContent() {
         <div className="container-page relative py-20 sm:py-28">
           <div className="mx-auto max-w-3xl text-center">
             <FadeContent delay={0.1}>
-              <span className="chip bg-primary/10 text-primary">
+              <span className="chip bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                 Projeto autônomo, neutro e independente
               </span>
             </FadeContent>
@@ -60,11 +60,11 @@ export function HomeContent() {
               direction="top"
               delay={60}
               stepDuration={0.25}
-              className="mt-6 font-display text-4xl leading-tight font-semibold tracking-tight text-primary sm:text-6xl"
+              className="mt-6 font-display text-4xl leading-tight font-semibold tracking-tight text-primary dark:text-primary-light sm:text-6xl"
             />
 
             <FadeContent delay={0.4}>
-              <p className="mx-auto mt-8 max-w-2xl text-lg text-neutral-dark/70">
+              <p className="mx-auto mt-8 max-w-2xl text-lg text-neutral-dark/70 dark:text-neutral-300">
                 O Brasil Transparente monitora, contextualiza e preserva o histórico de
                 políticos brasileiros — incluindo casos antigos e contradições passadas —
                 comparando fontes oficiais e canais de oposição, sem ligação com qualquer
@@ -86,7 +86,7 @@ export function HomeContent() {
           </div>
 
           <FadeContent delay={0.7}>
-            <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-4 border-t border-neutral-dark/10 pt-8">
+            <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-4 border-t border-neutral-dark/10 pt-8 dark:border-white/10">
               {[
                 { valor: 13, rotulo: "Políticos monitorados" },
                 { valor: 600, rotulo: "Notícias em arquivo" },
@@ -97,9 +97,9 @@ export function HomeContent() {
                     to={item.valor}
                     separator="."
                     duration={1.8}
-                    className="font-display text-3xl font-semibold text-primary sm:text-4xl"
+                    className="font-display text-3xl font-semibold text-primary dark:text-primary-light sm:text-4xl"
                   />
-                  <p className="mt-1 text-xs text-neutral-dark/60 sm:text-sm">{item.rotulo}</p>
+                  <p className="mt-1 text-xs text-neutral-dark/60 dark:text-neutral-400 sm:text-sm">{item.rotulo}</p>
                 </div>
               ))}
             </div>
@@ -107,7 +107,7 @@ export function HomeContent() {
         </div>
       </section>
 
-      <section id="sobre" className="border-t border-neutral-dark/10 bg-white">
+      <section id="sobre" className="border-t border-neutral-dark/10 bg-white dark:border-white/10 dark:bg-neutral-night">
         <div className="container-page py-16 sm:py-20">
           <FadeContent>
             <h2 className="sr-only">Pilares do projeto</h2>
@@ -116,13 +116,13 @@ export function HomeContent() {
             {PILARES.map((p, index) => (
               <FadeContent key={p.titulo} delay={0.1 * index}>
                 <SpotlightCard className="h-full shadow-soft" spotlightColor="rgba(15, 76, 129, 0.08)">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                     <p.icone className="h-5 w-5" />
                   </div>
-                  <h2 className="mt-4 font-display text-lg font-semibold text-primary">
+                  <h2 className="mt-4 font-display text-lg font-semibold text-primary dark:text-primary-light">
                     {p.titulo}
                   </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-neutral-dark/70">
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-dark/70 dark:text-neutral-300">
                     {p.descricao}
                   </p>
                 </SpotlightCard>
@@ -135,7 +135,7 @@ export function HomeContent() {
       <section id="metodologia" className="container-page py-16 sm:py-20">
         <FadeContent>
           <h2 className="prose-title">Como funciona</h2>
-          <p className="mt-2 max-w-readable text-neutral-dark/60">
+          <p className="mt-2 max-w-readable text-neutral-dark/60 dark:text-neutral-400">
             Um ciclo contínuo e auditável, do monitoramento à publicação.
           </p>
         </FadeContent>
@@ -147,7 +147,7 @@ export function HomeContent() {
                 <span className="font-display text-3xl font-semibold text-accent/40">
                   {item.etapa}
                 </span>
-                <p className="mt-3 text-sm leading-relaxed text-neutral-dark/70">
+                <p className="mt-3 text-sm leading-relaxed text-neutral-dark/70 dark:text-neutral-300">
                   {item.texto}
                 </p>
               </div>

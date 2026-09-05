@@ -29,7 +29,7 @@ type Noticia = {
 
 const FALHA_LOADING = (
   <main className="container-page py-12">
-    <p className="text-sm text-neutral-dark/60">Carregando…</p>
+    <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
   </main>
 );
 
@@ -63,7 +63,7 @@ export function NoticiaContent({ id }: { id: number }) {
   if (!noticia) {
     return (
       <main className="container-page py-12">
-        <p className="text-sm text-neutral-dark/60">Carregando…</p>
+        <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
       </main>
     );
   }
@@ -73,7 +73,7 @@ export function NoticiaContent({ id }: { id: number }) {
       <main className="container-page py-12">
         <Link
           href="/noticias"
-          className="text-sm text-neutral-dark/60 transition hover:text-accent"
+          className="text-sm text-neutral-dark/60 transition hover:text-accent dark:text-neutral-400 dark:hover:text-accent-light"
         >
           ← Todas as notícias
         </Link>
@@ -88,8 +88,8 @@ export function NoticiaContent({ id }: { id: number }) {
             />
           )}
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-            <span className="chip bg-primary/10 text-primary">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60 dark:text-neutral-400">
+            <span className="chip bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
               {noticia.categoria}
             </span>
             <span>{noticia.tipo_fonte}</span>
@@ -110,7 +110,7 @@ export function NoticiaContent({ id }: { id: number }) {
           {noticia.politico && (
             <Link
               href={`/politicos/${noticia.politico.id}`}
-              className="mt-4 inline-flex items-center gap-3 rounded-xl border border-neutral-dark/10 bg-white p-3 text-sm font-medium text-primary shadow-soft transition hover:border-primary/40"
+              className="mt-4 inline-flex items-center gap-3 rounded-xl border border-neutral-dark/10 bg-white p-3 text-sm font-medium text-primary shadow-soft transition hover:border-primary/40 dark:border-white/10 dark:bg-neutral-panel dark:text-primary-light dark:hover:border-primary-light/40"
             >
               {noticia.politico.foto_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -120,7 +120,7 @@ export function NoticiaContent({ id }: { id: number }) {
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                   {noticia.politico.nome.charAt(0).toUpperCase()}
                 </span>
               )}
@@ -134,19 +134,19 @@ export function NoticiaContent({ id }: { id: number }) {
           <div className="mt-6 space-y-6">
             {noticia.resumo ? (
               <section className="card p-8">
-                <h2 className="font-display text-xl font-bold text-primary">
+                <h2 className="font-display text-xl font-bold text-primary dark:text-primary-light">
                   Leitura no site
                 </h2>
-                <p className="prose mt-4 leading-relaxed text-neutral-dark/90">
+                <p className="prose mt-4 leading-relaxed text-neutral-dark/90 dark:text-neutral-200">
                   {noticia.resumo}
                 </p>
               </section>
             ) : (
               <section className="card p-8">
-                <h2 className="font-display text-xl font-bold text-primary">
+                <h2 className="font-display text-xl font-bold text-primary dark:text-primary-light">
                   Resumo em preparação
                 </h2>
-                <p className="mt-2 text-sm text-neutral-dark/70">
+                <p className="mt-2 text-sm text-neutral-dark/70 dark:text-neutral-300">
                   Nossa equipe ainda não concluiu a síntese desta matéria.
                   Leia a versão original na fonte abaixo.
                 </p>
@@ -155,25 +155,25 @@ export function NoticiaContent({ id }: { id: number }) {
 
             {noticia.contradicao_detectada && noticia.contradicao_descricao && (
               <section className="rounded-xl border border-accent/40 bg-accent/5 p-6">
-                <h2 className="flex items-center gap-2 text-sm font-bold text-accent">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-accent dark:text-accent-light">
                   <span
                     aria-hidden
                     className="inline-block h-2 w-2 rounded-full bg-accent"
                   />
                   Contraposição encontrada
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-dark/90">
+                <p className="mt-2 text-sm leading-relaxed text-neutral-dark/90 dark:text-neutral-200">
                   {noticia.contradicao_descricao}
                 </p>
               </section>
             )}
 
             {noticia.url && (
-              <section className="rounded-xl border border-neutral-dark/10 bg-white p-6">
-                <h2 className="font-display text-base font-bold text-primary">
+              <section className="rounded-xl border border-neutral-dark/10 bg-white p-6 dark:border-white/10 dark:bg-neutral-panel">
+                <h2 className="font-display text-base font-bold text-primary dark:text-primary-light">
                   Fonte original
                 </h2>
-                <p className="mt-1 text-xs text-neutral-dark/60">
+                <p className="mt-1 text-xs text-neutral-dark/60 dark:text-neutral-400">
                   Conteúdo monitorado por nossa equipe, sem edição.
                 </p>
                 <a
@@ -184,7 +184,7 @@ export function NoticiaContent({ id }: { id: number }) {
                 >
                   Abrir matéria original
                 </a>
-                <p className="mt-3 break-all text-xs text-neutral-dark/50">
+                <p className="mt-3 break-all text-xs text-neutral-dark/50 dark:text-neutral-500">
                   {noticia.url_fonte ?? noticia.url}
                 </p>
               </section>
