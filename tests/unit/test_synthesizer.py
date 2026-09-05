@@ -7,7 +7,8 @@ import requests
 
 import synthesizer
 from synthesizer import build_user_prompt, synthesize_item, _parse_response
-from synthesizer import _retry_after_seconds, _call
+from synthesizer import _retry_after_seconds, _call, _parse_interval
+from synthesizer import _reset_rate_state, _update_rate_state
 
 
 class FakePost:
@@ -167,3 +168,97 @@ def test_call_429_persistente_marca_falha_definitiva(monkeypatch, capsys):
     out = _call("groq", "prompt")
     assert out is None
     assert fake.call_count == synthesizer.RATE_LIMIT_MAX_ATTEMPTS
+
+
+def test_parse_interval_variados():
+    assert _parse_interval("7.66s") == pytest.approx(7.66)
+    assert _parse_interval("2m59.56s") == pytest.approx(179.56)
+    assert _parse_interval("45") == pytest.approx(45)
+    assert _parse_interval("1h30m") == pytest.approx(5400)
+    assert _parse_interval("") is None
+    assert _parse_interval("abc") is None
+
+
+def test_retry_after_reset_tokens_interval():
+    class R:
+        headers = {"x-ratelimit-reset-tokens": "7.66s"}
+    assert _retry_after_seconds(R()) == pytest.approx(7.66)
+
+
+def test_retry_after_reset_requests_interval():
+    class R:
+        headers = {"x-ratelimit-reset-requests": "2m59.56s"}
+    assert _retry_after_seconds(R()) == pytest.approx(179.56)
+
+
+def test_retry_after_prioriza_retry_after_sobre_reset():
+    class R:
+        headers = {"Retry-After": "3", "x-ratelimit-reset-tokens": "40s"}
+    assert _retry_after_seconds(R()) == 3.0
+
+
+def test_update_rate_state_acumula_headers():
+    _reset_rate_state()
+    class R:
+        headers = {
+            "x-ratelimit-remaining-tokens": "1200",
+            "x-ratelimit-remaining-requests": "950",
+            "x-ratelimit-reset-tokens": "9.5s",
+            "x-ratelimit-reset-requests": "1h0m",
+        }
+    _update_rate_state(R())
+    assert synthesizer._RATE_LIMIT_STATE["remaining_tokens"] == 1200
+    assert synthesizer._RATE_LIMIT_STATE["remaining_requests"] == 950
+    assert synthesizer._RATE_LIMIT_STATE["reset_tokens_seconds"] == pytest.approx(9.5)
+    assert synthesizer._RATE_LIMIT_STATE["reset_requests_seconds"] == pytest.approx(3600)
+
+
+def test_wait_proativo_quando_tokens_prestes_a_zerar(monkeypatch):
+    _reset_rate_state()
+    sleeps = []
+    monkeypatch.setattr("synthesizer.time.sleep", lambda s: sleeps.append(s))
+    synthesizer._RATE_LIMIT_STATE.update({
+        "remaining_tokens": 100,
+        "remaining_requests": 500,
+        "reset_tokens_seconds": 6,
+        "reset_requests_seconds": 3600,
+    })
+    synthesizer._wait_if_rate_limited()
+    assert sleeps and sleeps[0] == pytest.approx(6.5)
+    # estado zerado após esperar
+    assert synthesizer._RATE_LIMIT_STATE["remaining_tokens"] is None
+    _reset_rate_state()
+
+
+def test_nao_espera_por_janela_longa_rpd(monkeypatch):
+    _reset_rate_state()
+    sleeps = []
+    monkeypatch.setattr("synthesizer.time.sleep", lambda s: sleeps.append(s))
+    synthesizer._RATE_LIMIT_STATE.update({
+        "remaining_tokens": 10,
+        "remaining_requests": 1,
+        "reset_tokens_seconds": 3600,
+        "reset_requests_seconds": 3600,
+    })
+    synthesizer._wait_if_rate_limited()
+    assert sleeps == []
+    _reset_rate_state()
+
+
+def test_call_429_com_espera_longa_desiste_imediatamente(monkeypatch):
+    from unittest.mock import MagicMock
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    _reset_rate_state()
+
+    def long_429(*a, **k):
+        return FakePost.Resp(None, status=429, headers={"Retry-After": "3600"})
+
+    fake = MagicMock(side_effect=long_429)
+    monkeypatch.setattr("synthesizer.requests.post", fake)
+
+    out = _call("groq", "prompt")
+    assert out is None
+    assert fake.call_count == 1  # desistiu na primeira tentativa, sem esperar 1h
+    _reset_rate_state()
