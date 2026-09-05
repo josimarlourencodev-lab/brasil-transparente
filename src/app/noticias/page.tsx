@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -119,48 +120,62 @@ export function NoticiasContent() {
             {noticias.map((n) => (
               <article
                 key={n.id}
-                className="card flex flex-col gap-5 p-6 sm:flex-row"
+                className="card flex flex-col gap-3 p-6 transition hover:shadow-glow sm:flex-row"
               >
-                {n.imagem_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={n.imagem_url}
-                    alt=""
-                    className="h-32 w-full shrink-0 rounded-lg object-cover sm:h-28 sm:w-40"
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-                    <span className="chip bg-primary/10 text-primary">
-                      {n.categoria}
-                    </span>
-                    <span>{n.tipo_fonte}</span>
-                    {n.politica && (
-                      <span className="chip bg-accent/10 text-accent">
-                        {n.politica.nome}
-                      </span>
-                    )}
-                    {n.publicado_em && (
-                      <time dateTime={n.publicado_em}>
-                        {new Date(n.publicado_em).toLocaleDateString("pt-BR")}
-                      </time>
-                    )}
-                  </div>
-                  <h2 className="mt-3 text-lg font-semibold">{n.titulo}</h2>
-                  {n.resumo && (
-                    <p className="mt-2 text-sm text-neutral-dark/70">{n.resumo}</p>
+                <Link
+                  href={`/noticias/${n.id}`}
+                  className="flex min-w-0 flex-1 flex-col gap-5 sm:flex-row"
+                >
+                  {n.imagem_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={n.imagem_url}
+                      alt=""
+                      className="h-32 w-full shrink-0 rounded-lg object-cover sm:h-28 sm:w-40"
+                    />
                   )}
-                  {n.url && (
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
+                      <span className="chip bg-primary/10 text-primary">
+                        {n.categoria}
+                      </span>
+                      <span>{n.tipo_fonte}</span>
+                      {n.politica && (
+                        <span className="chip bg-accent/10 text-accent">
+                          {n.politica.nome}
+                        </span>
+                      )}
+                      {n.publicado_em && (
+                        <time dateTime={n.publicado_em}>
+                          {new Date(n.publicado_em).toLocaleDateString("pt-BR")}
+                        </time>
+                      )}
+                    </div>
+                    <h2 className="mt-3 text-lg font-semibold transition hover:text-primary">
+                      {n.titulo}
+                    </h2>
+                    {n.resumo && (
+                      <p className="mt-2 text-sm text-neutral-dark/70">
+                        {n.resumo}
+                      </p>
+                    )}
+                    <span className="mt-3 inline-flex text-xs font-semibold text-accent hover:underline">
+                      Ler no site →
+                    </span>
+                  </div>
+                </Link>
+                {n.url && (
+                  <div className="shrink-0 sm:self-center">
                     <a
                       href={n.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 block truncate text-xs text-accent hover:underline"
+                      className="btn-ghost whitespace-nowrap px-3 py-2 text-xs"
                     >
-                      {n.url}
+                      Fonte original ↗
                     </a>
-                  )}
-                </div>
+                  </div>
+                )}
               </article>
             ))}
 
