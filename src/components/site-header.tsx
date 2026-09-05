@@ -17,6 +17,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Início" },
   { href: "/noticias", label: "Notícias" },
   { href: "/politicos", label: "Políticos" },
+  { href: "/podcast", label: "Podcast" },
   { href: "/#sobre", label: "Sobre" },
   { href: "/#metodologia", label: "Metodologia" },
 ];
