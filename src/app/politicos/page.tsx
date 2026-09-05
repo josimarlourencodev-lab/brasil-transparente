@@ -37,22 +37,10 @@ export default function PoliticosPage() {
 
   return (
     <div className="min-h-screen">
-      <nav className="border-b border-neutral-dark/10 bg-white">
-        <div className="container-page flex items-center justify-between py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-            Brasil<span className="text-accent"> Transparente</span>
-          </Link>
-          <Link
-            href="/noticias"
-            className="text-sm text-neutral-dark/70 hover:text-primary"
-          >
-            Notícias
-          </Link>
-        </div>
-      </nav>
-
       <main className="container-page py-12">
-        <h1 className="text-3xl font-bold text-primary">Políticos monitorados</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+          Políticos monitorados
+        </h1>
         <p className="mt-2 text-neutral-dark/70">
           Histórico contextualizado com casos, contradições e posições documentados ao
           longo do tempo.
@@ -64,11 +52,11 @@ export default function PoliticosPage() {
           </p>
         )}
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           {politicos.map((p) => (
             <article
               key={p.id}
-              className="rounded-xl border border-neutral-dark/10 bg-white p-6 transition-shadow hover:shadow-md"
+              className="card p-6 transition-shadow hover:shadow-glow"
             >
               <Link href={`/politicos/${p.id}`} className="block">
                 <div className="flex items-start justify-between gap-3">
@@ -93,7 +81,7 @@ export default function PoliticosPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <span className="chip bg-primary/10 text-primary">
                     {p.partido ?? "Sem partido"}
                   </span>
                 </div>

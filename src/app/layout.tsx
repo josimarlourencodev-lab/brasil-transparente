@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const lora = Lora({ subsets: ["latin"], variable: "--font-lora" });
 
 export const metadata: Metadata = {
   title: "Brasil Transparente",
@@ -32,8 +35,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
+      <body className={`${inter.variable} ${lora.variable} flex min-h-screen flex-col font-sans antialiased`}>
+        <SiteHeader />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
         <PwaRegister />
       </body>
     </html>

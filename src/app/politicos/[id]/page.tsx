@@ -33,24 +33,9 @@ type Perfil = {
 };
 
 const FALHA_LOADING = (
-  <div className="min-h-screen">
-    <nav className="border-b border-neutral-dark/10 bg-white">
-      <div className="container-page flex items-center justify-between py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-          Brasil<span className="text-accent"> Transparente</span>
-        </Link>
-        <Link
-          href="/noticias"
-          className="text-sm text-neutral-dark/70 hover:text-primary"
-        >
-          Notícias
-        </Link>
-      </div>
-    </nav>
-    <main className="container-page py-12">
-      <p className="text-sm text-neutral-dark/60">Carregando…</p>
-    </main>
-  </div>
+  <main className="container-page py-12">
+    <p className="text-sm text-neutral-dark/60">Carregando…</p>
+  </main>
 );
 
 function iniciais(nome: string): string {
@@ -90,24 +75,9 @@ export function PerfilContent({ id }: { id: number }) {
 
   if (!perfil) {
     return (
-      <div className="min-h-screen">
-        <nav className="border-b border-neutral-dark/10 bg-white">
-          <div className="container-page flex items-center justify-between py-4">
-            <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-              Brasil<span className="text-accent">Transparente</span>
-            </Link>
-            <Link
-              href="/noticias"
-              className="text-sm text-neutral-dark/70 hover:text-primary"
-            >
-              Notícias
-            </Link>
-          </div>
-        </nav>
-        <main className="container-page py-12">
-          <p className="text-sm text-neutral-dark/60">Carregando…</p>
-        </main>
-      </div>
+      <main className="container-page py-12">
+        <p className="text-sm text-neutral-dark/60">Carregando…</p>
+      </main>
     );
   }
 
@@ -115,37 +85,15 @@ export function PerfilContent({ id }: { id: number }) {
 
   return (
     <div className="min-h-screen">
-      <nav className="border-b border-neutral-dark/10 bg-white">
-        <div className="container-page flex items-center justify-between py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-            Brasil<span className="text-accent"> Transparente</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/politicos"
-              className="text-sm text-neutral-dark/70 hover:text-primary"
-            >
-              Políticos
-            </Link>
-            <Link
-              href="/noticias"
-              className="text-sm text-neutral-dark/70 hover:text-primary"
-            >
-              Notícias
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       <main className="container-page py-12">
         <Link
           href="/politicos"
-          className="text-sm text-accent hover:underline"
+          className="text-sm text-neutral-dark/60 transition hover:text-accent"
         >
           ← Todos os políticos
         </Link>
 
-        <div className="mt-6 flex flex-col gap-6 rounded-xl border border-neutral-dark/10 bg-white p-8 sm:flex-row">
+        <div className="card mt-6 flex flex-col gap-6 p-8 sm:flex-row sm:items-start">
           {politico.foto_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -184,7 +132,7 @@ export function PerfilContent({ id }: { id: number }) {
           </div>
         </div>
 
-        <h2 className="mt-10 text-xl font-bold text-primary">
+        <h2 className="prose-title mt-10">
           Notícias relacionadas
         </h2>
         <p className="mt-1 text-sm text-neutral-dark/60">
@@ -197,19 +145,19 @@ export function PerfilContent({ id }: { id: number }) {
           {noticias.map((n) => (
             <article
               key={n.id}
-              className="flex gap-5 rounded-xl border border-neutral-dark/10 bg-white p-6"
+              className="card flex flex-col gap-5 p-6 sm:flex-row"
             >
               {n.imagem_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={n.imagem_url}
                   alt=""
-                  className="hidden h-28 w-40 shrink-0 rounded-lg object-cover sm:block"
+                  className="h-32 w-full shrink-0 rounded-lg object-cover sm:h-28 sm:w-40"
                 />
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-                  <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
+                  <span className="chip bg-primary/10 text-primary">
                     {n.categoria}
                   </span>
                   <span>{n.tipo_fonte}</span>
