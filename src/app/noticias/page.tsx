@@ -70,10 +70,10 @@ export function NoticiasContent() {
   return (
     <div className="min-h-screen">
       <main className="container-page py-12">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-primary dark:text-primary-light">
           Notícias monitoradas
         </h1>
-        <p className="mt-2 text-neutral-dark/70">
+        <p className="mt-2 text-neutral-dark/70 dark:text-neutral-300">
           Matérias coletadas de fontes oficiais e de oposição, com referências primárias.
         </p>
 
@@ -88,7 +88,7 @@ export function NoticiasContent() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por político ou assunto…"
-            className="flex-1 rounded-lg border border-neutral-dark/15 bg-white px-4 py-2 text-sm outline-none focus:border-primary"
+            className="flex-1 rounded-lg border border-neutral-dark/15 bg-white px-4 py-2 text-sm outline-none focus:border-primary dark:border-white/15 dark:bg-neutral-panel dark:text-neutral-100 dark:focus:border-primary-light"
           />
           <button
             type="submit"
@@ -99,20 +99,20 @@ export function NoticiasContent() {
         </form>
 
         {q && (
-          <p className="mt-3 text-sm text-neutral-dark/60">
-            Resultados para <strong className="text-primary">{q}</strong>
+          <p className="mt-3 text-sm text-neutral-dark/60 dark:text-neutral-400">
+            Resultados para <strong className="text-primary dark:text-primary-light">{q}</strong>
             {noticias.length > 0 ? ` (${noticias.length})` : ""}
           </p>
         )}
 
         {erro && (
-          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {erro}
           </p>
         )}
 
         {carregando && (
-          <p className="mt-8 text-sm text-neutral-dark/60">Carregando…</p>
+          <p className="mt-8 text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
         )}
 
         {!carregando && !erro && (
@@ -135,13 +135,13 @@ export function NoticiasContent() {
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-                      <span className="chip bg-primary/10 text-primary">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60 dark:text-neutral-400">
+                      <span className="chip bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                         {n.categoria}
                       </span>
                       <span>{n.tipo_fonte}</span>
                       {n.politica && (
-                        <span className="chip bg-accent/10 text-accent">
+                        <span className="chip bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent-light">
                           {n.politica.nome}
                         </span>
                       )}
@@ -151,11 +151,11 @@ export function NoticiasContent() {
                         </time>
                       )}
                     </div>
-                    <h2 className="mt-3 text-lg font-semibold transition hover:text-primary">
+                    <h2 className="mt-3 text-lg font-semibold transition hover:text-primary dark:text-neutral-100 dark:hover:text-primary-light">
                       {n.titulo}
                     </h2>
                     {n.resumo && (
-                      <p className="mt-2 text-sm text-neutral-dark/70">
+                      <p className="mt-2 text-sm text-neutral-dark/70 dark:text-neutral-300">
                         {n.resumo}
                       </p>
                     )}
@@ -180,8 +180,8 @@ export function NoticiasContent() {
             ))}
 
             {noticias.length === 0 && (
-              <div className="flex items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-16">
-                <p className="text-neutral-dark/60">
+              <div className="flex items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-16 dark:border-white/15 dark:bg-neutral-panel">
+                <p className="text-neutral-dark/60 dark:text-neutral-400">
                   {q ? "Nenhuma notícia encontrada para esta busca." : "Ainda não há notícias coletadas."}
                 </p>
               </div>
@@ -198,7 +198,7 @@ export default function NoticiasPage() {
     <Suspense
       fallback={
         <main className="container-page py-12">
-          <p className="text-sm text-neutral-dark/60">Carregando…</p>
+          <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
         </main>
       }
     >

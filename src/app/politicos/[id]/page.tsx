@@ -34,7 +34,7 @@ type Perfil = {
 
 const FALHA_LOADING = (
   <main className="container-page py-12">
-    <p className="text-sm text-neutral-dark/60">Carregando…</p>
+    <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
   </main>
 );
 
@@ -76,7 +76,7 @@ export function PerfilContent({ id }: { id: number }) {
   if (!perfil) {
     return (
       <main className="container-page py-12">
-        <p className="text-sm text-neutral-dark/60">Carregando…</p>
+        <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
       </main>
     );
   }
@@ -88,7 +88,7 @@ export function PerfilContent({ id }: { id: number }) {
       <main className="container-page py-12">
         <Link
           href="/politicos"
-          className="text-sm text-neutral-dark/60 transition hover:text-accent"
+          className="text-sm text-neutral-dark/60 transition hover:text-accent dark:text-neutral-400 dark:hover:text-accent-light"
         >
           ← Todos os políticos
         </Link>
@@ -102,18 +102,18 @@ export function PerfilContent({ id }: { id: number }) {
               className="h-40 w-40 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-full bg-primary/10 text-5xl font-bold text-primary">
+            <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-full bg-primary/10 text-5xl font-bold text-primary dark:bg-primary/20 dark:text-primary-light">
               {iniciais(politico.nome)}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-primary">{politico.nome}</h1>
-            <p className="mt-2 text-neutral-dark/70">
+            <h1 className="text-3xl font-bold text-primary dark:text-primary-light">{politico.nome}</h1>
+            <p className="mt-2 text-neutral-dark/70 dark:text-neutral-300">
               {politico.partido ?? "Sem partido"}
               {politico.cargo ? ` · ${politico.cargo}` : ""}
             </p>
             {politico.biografia && (
-              <p className="mt-4 text-sm leading-relaxed text-neutral-dark/80">
+              <p className="mt-4 text-sm leading-relaxed text-neutral-dark/80 dark:text-neutral-300">
                 {politico.biografia}
               </p>
             )}
@@ -122,7 +122,7 @@ export function PerfilContent({ id }: { id: number }) {
                 {politico.termos_busca.map((t) => (
                   <span
                     key={t}
-                    className="rounded-full bg-neutral-dark/5 px-2.5 py-0.5 text-xs text-neutral-dark/80"
+                    className="rounded-full bg-neutral-dark/5 px-2.5 py-0.5 text-xs text-neutral-dark/80 dark:bg-white/10 dark:text-neutral-300"
                   >
                     {t}
                   </span>
@@ -135,7 +135,7 @@ export function PerfilContent({ id }: { id: number }) {
         <h2 className="prose-title mt-10">
           Notícias relacionadas
         </h2>
-        <p className="mt-1 text-sm text-neutral-dark/60">
+        <p className="mt-1 text-sm text-neutral-dark/60 dark:text-neutral-400">
           {noticias.length > 0
             ? `Matérias em que ${politico.nome} é mencionado.`
             : "Nenhuma notícia associada ainda."}
@@ -160,8 +160,8 @@ export function PerfilContent({ id }: { id: number }) {
                   />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60">
-                    <span className="chip bg-primary/10 text-primary">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-dark/60 dark:text-neutral-400">
+                    <span className="chip bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                       {n.categoria}
                     </span>
                     <span>{n.tipo_fonte}</span>
@@ -171,11 +171,11 @@ export function PerfilContent({ id }: { id: number }) {
                       </time>
                     )}
                   </div>
-                  <h3 className="mt-3 text-lg font-semibold transition hover:text-primary">
+                  <h3 className="mt-3 text-lg font-semibold transition hover:text-primary dark:text-neutral-100 dark:hover:text-primary-light">
                     {n.titulo}
                   </h3>
                   {n.resumo && (
-                    <p className="mt-2 text-sm text-neutral-dark/70">{n.resumo}</p>
+                    <p className="mt-2 text-sm text-neutral-dark/70 dark:text-neutral-300">{n.resumo}</p>
                   )}
                   <span className="mt-3 inline-flex text-xs font-semibold text-accent hover:underline">
                     Ler no site →
