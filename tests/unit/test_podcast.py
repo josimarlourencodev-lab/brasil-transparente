@@ -53,7 +53,7 @@ class FakePost:
 
 
 def test_modelo_padrao_e_dedicado():
-    assert podcast.LLM_MODEL_PADRAO == "qwen/qwen3.8-27b"
+    assert podcast.LLM_MODEL_PADRAO == "openai/gpt-oss-120b"
     assert podcast.LLM_MODEL_PADRAO not in ("openai/gpt-oss-20b",)
 
 
@@ -64,7 +64,7 @@ def test_gerar_roteiro_sem_chave_nao_tenta_llm(monkeypatch):
 
 def test_gerar_roteiro_usa_modelo_dedicado(monkeypatch):
     monkeypatch.setenv("LLM_API_KEY", "chave-teste")
-    monkeypatch.setenv("PODCAST_LLM_MODEL", "qwen/qwen3.8-27b")
+    monkeypatch.setenv("PODCAST_LLM_MODEL", "openai/gpt-oss-120b")
     fake = FakePost(FakePost.Resp({
         "choices": [{"message": {"content": "Roteiro de teste."}}]
     }))
@@ -75,7 +75,8 @@ def test_gerar_roteiro_usa_modelo_dedicado(monkeypatch):
 
     assert len(fake.calls) == 1
     _url, payload = fake.calls[0][0], fake.calls[0][1]["json"]
-    assert payload["model"] == "qwen/qwen3.8-27b"
+    assert payload["model"] == "openai/gpt-oss-120b"
+    assert payload["max_tokens"] == 7000
     assert payload["messages"][0]["role"] == "system"
     assert "Brasil Transparente" in payload["messages"][0]["content"]
     corpo = json.loads(payload["messages"][1]["content"].split("\n\n", 1)[1])
