@@ -120,6 +120,16 @@ MAX_ATTEMPTS = 4
 RATE_LIMIT_MAX_ATTEMPTS = 5
 BACKOFF_BASE_SECONDS = 2
 BACKOFF_MAX_SECONDS = 60
+MAX_SLEEP_ON_429 = 120
+TOKENS_ESTIMATIVA_POR_CHAMADA = 1500
+RATE_RESET_MAX_ESPERA = 120
+
+_RATE_LIMIT_STATE: dict[str, float | None] = {
+    "remaining_requests": None,
+    "remaining_tokens": None,
+    "reset_tokens_seconds": None,
+    "reset_requests_seconds": None,
+}
 
 
 def _email_date_to_epoch(value: str) -> float | None:
@@ -135,17 +145,50 @@ def _email_date_to_epoch(value: str) -> float | None:
         return None
 
 
+def _parse_interval(value: str) -> float | None:
+    """Converte intervalos de reset da Groq (ex.: '7.66s', '2m59.56s', '45')
+    para segundos. Retorna None para valores não reconhecidos."""
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        pass
+    units = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+    total = 0.0
+    num = ""
+    for ch in raw:
+        if ch.isdigit() or ch == "." or ch == ",":
+            num += ch.replace(",", ".")
+        elif num:
+            total += float(num) * units.get(ch.lower(), 1)
+            num = ""
+    if num:
+        total += float(num)
+    return total if total > 0 else None
+
+
 def _retry_after_seconds(resp) -> float | None:
-    """Deriva segundos de espera a partir dos headers de rate limit, se houver."""
+    """Deriva segundos de espera a partir dos headers de rate limit, se houver.
+
+    Precedência (docs Groq): `Retry-After` (segundos ou data HTTP) no 429;
+    em seguida `x-ratelimit-reset-tokens` / `x-ratelimit-reset-requests`
+    (intervalos como '7.66s' ou '2m59.56s'); e por fim `x-ratelimit-reset`
+    legado (epoch em ms).
+    """
     raw = resp.headers.get("Retry-After")
     if raw:
-        raw = raw.strip()
         try:
-            return float(raw)
+            return float(raw.strip())
         except ValueError:
-            epoch = _email_date_to_epoch(raw)
+            epoch = _email_date_to_epoch(raw.strip())
             if epoch is not None:
                 return max(0.0, epoch - time.time())
+    for header in ("x-ratelimit-reset-tokens", "x-ratelimit-reset-requests"):
+        interval = _parse_interval(resp.headers.get(header))
+        if interval is not None:
+            return interval
     reset = resp.headers.get("x-ratelimit-reset")
     if reset:
         try:
@@ -155,6 +198,63 @@ def _retry_after_seconds(resp) -> float | None:
         except ValueError:
             pass
     return None
+
+
+def _update_rate_state(resp) -> None:
+    """Acumula os headers `x-ratelimit-*` de qualquer resposta (2xx ou 429)."""
+    if not resp:
+        return
+    headers = resp.headers or {}
+    if headers.get("x-ratelimit-remaining-tokens") is not None:
+        try:
+            _RATE_LIMIT_STATE["remaining_tokens"] = float(
+                headers["x-ratelimit-remaining-tokens"]
+            )
+        except ValueError:
+            pass
+    if headers.get("x-ratelimit-remaining-requests") is not None:
+        try:
+            _RATE_LIMIT_STATE["remaining_requests"] = float(
+                headers["x-ratelimit-remaining-requests"]
+            )
+        except ValueError:
+            pass
+    interval = _parse_interval(headers.get("x-ratelimit-reset-tokens"))
+    if interval is not None:
+        _RATE_LIMIT_STATE["reset_tokens_seconds"] = interval
+    interval = _parse_interval(headers.get("x-ratelimit-reset-requests"))
+    if interval is not None:
+        _RATE_LIMIT_STATE["reset_requests_seconds"] = interval
+
+
+def _reset_rate_state() -> None:
+    for key in _RATE_LIMIT_STATE:
+        _RATE_LIMIT_STATE[key] = None
+
+
+def _wait_if_rate_limited() -> None:
+    """Espera proativamente quando a janela de tokens/requests está prestes a
+    zerar, evitando bater no 429. Não dorme para janelas longas (RPD em horas)."""
+    state = _RATE_LIMIT_STATE
+    wait = 0.0
+    if (
+        state["remaining_tokens"] is not None
+        and state["remaining_tokens"] <= TOKENS_ESTIMATIVA_POR_CHAMADA
+    ):
+        reset = state["reset_tokens_seconds"]
+        if reset is not None and reset <= RATE_RESET_MAX_ESPERA:
+            wait = max(wait, reset)
+    if (
+        state["remaining_requests"] is not None
+        and state["remaining_requests"] <= 1
+    ):
+        reset = state["reset_requests_seconds"]
+        if reset is not None and reset <= RATE_RESET_MAX_ESPERA:
+            wait = max(wait, reset)
+    if wait > 0:
+        print(f"[llm] janela de rate limit quase zerada — aguardando {wait:.1f}s")
+        time.sleep(wait + 0.5)
+        _reset_rate_state()
 
 
 def _backoff_seconds(attempt: int, retry_after: float | None) -> float:
@@ -177,6 +277,7 @@ def _call(provider: str, user_prompt: str) -> dict | None:
     attempts = 0
     while True:
         attempts += 1
+        _wait_if_rate_limited()
         try:
             resp = requests.post(
                 url,
@@ -193,11 +294,18 @@ def _call(provider: str, user_prompt: str) -> dict | None:
             continue
 
         last_status = resp.status_code
+        _update_rate_state(resp)
 
         if resp.status_code == 429:
             retry_after = _retry_after_seconds(resp)
             if attempts >= RATE_LIMIT_MAX_ATTEMPTS:
                 print(f"[llm] falha definitiva por rate limit (tentativa {attempts})")
+                break
+            if retry_after is not None and retry_after > MAX_SLEEP_ON_429:
+                print(
+                    f"[llm] 429 com espera longa ({retry_after:.0f}s) — RPD esgotado, "
+                    f"desistindo nesta execução"
+                )
                 break
             if retry_after:
                 print(f"[llm] rate limit — aguardando {retry_after:.0f}s (tentativa {attempts + 1})")
