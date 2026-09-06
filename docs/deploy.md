@@ -3,8 +3,22 @@
 ## Web (Vercel)
 
 - Deploy **automático** a partir do branch `main` (Git integration).
-- Toda PR mergeada em `main` publica a produção.
-- Variáveis de ambiente configuradas na Vercel (mesmas da seção [Segurança](seguranca.md)).
+- Toda PR mergeada em `main` publica a produção. Deploy manual opcional:
+  ```sh
+  vercel link --yes --team <team_id> --project <project_id>
+  vercel --prod --yes
+  ```
+- **URL de produção vigente:** `https://brasil-transparente-rust.vercel.app`
+  (subdomínio auto-gerado; domínio próprio `brasiltransparente.com.br` pendente de
+  configuração em *Settings → Domains*).
+- **Atenção — domínio divergente:** `brasil-transparente.vercel.app` pertence a
+  **outro projeto/conta** da Vercel (aplicação não relacionada). Ele não é nosso e
+  não está sob o scope `openbrazil` — não buscar/consumir dados nesse endereço.
+- Variáveis de ambiente configuradas na Vercel para **Production** e **Preview**
+  (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`) — mesmas da seção
+  [Segurança](seguranca.md). A config CLI local (`.vercel/project.json`) deve
+  apontar para `openbrazil/brasil-transparente`; o arquivo é gitignored.
 
 ## Banco + Storage (Supabase)
 
