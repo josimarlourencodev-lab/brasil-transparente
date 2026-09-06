@@ -39,7 +39,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/pitch" className="text-white/70 transition hover:text-white">
-                  Pitch
+                  O Brasil Transparente
                 </Link>
               </li>
             </ul>
@@ -70,7 +70,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/pitch" className="text-white/70 transition hover:text-white">
-                  Pitch
+                  O Brasil Transparente
                 </Link>
               </li>
               <li>
