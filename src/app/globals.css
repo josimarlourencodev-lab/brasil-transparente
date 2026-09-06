@@ -6,16 +6,17 @@
   color-scheme: light;
 }
 
-body {
-  background-color: theme("colors.neutral.DEFAULT");
-  color: theme("colors.neutral.dark");
+.dark {
+  color-scheme: dark;
 }
 
-@layer base {
-  ::selection {
-    background-color: theme("colors.primary.DEFAULT");
-    color: white;
-  }
+body {
+  @apply bg-neutral text-neutral-dark transition-colors duration-200 dark:bg-neutral-night dark:text-neutral-100;
+}
+
+::selection {
+  background-color: theme("colors.primary.DEFAULT");
+  color: white;
 }
 
 @layer components {
@@ -24,11 +25,11 @@ body {
   }
 
   .prose-title {
-    @apply font-display text-2xl font-semibold tracking-tight text-primary sm:text-3xl;
+    @apply font-display text-2xl font-semibold tracking-tight text-primary dark:text-primary-light sm:text-3xl;
   }
 
   .card {
-    @apply rounded-2xl border border-neutral-dark/10 bg-white shadow-card;
+    @apply rounded-2xl border border-neutral-dark/10 bg-white shadow-card transition-colors duration-200 dark:border-white/10 dark:bg-neutral-panel;
   }
 
   .chip {
@@ -36,7 +37,7 @@ body {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:hover:bg-primary-light;
   }
 
   .btn-accent {
@@ -44,6 +45,6 @@ body {
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-primary/20 px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-primary/20 px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-primary/40 dark:text-primary-light dark:hover:bg-primary/10;
   }
 }

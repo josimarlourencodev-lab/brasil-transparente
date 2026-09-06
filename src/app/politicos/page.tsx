@@ -60,16 +60,16 @@ export default function PoliticosPage() {
   return (
     <div className="min-h-screen">
       <main className="container-page py-12">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-primary dark:text-primary-light">
           Políticos monitorados
         </h1>
-        <p className="mt-2 text-neutral-dark/70">
+        <p className="mt-2 text-neutral-dark/70 dark:text-neutral-300">
           Histórico contextualizado com casos, contradições e posições documentados ao
           longo do tempo.
         </p>
 
         {erro && (
-          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {erro}
           </p>
         )}
@@ -91,20 +91,20 @@ export default function PoliticosPage() {
                         className="h-16 w-16 shrink-0 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary dark:bg-primary/20 dark:text-primary-light">
                         {iniciais(p.nome)}
                       </div>
                     )}
                     <div>
-                      <h2 className="text-lg font-semibold text-primary">{p.nome}</h2>
-                      <p className="mt-1 text-sm text-neutral-dark/70">
+                      <h2 className="text-lg font-semibold text-primary dark:text-primary-light">{p.nome}</h2>
+                      <p className="mt-1 text-sm text-neutral-dark/70 dark:text-neutral-300">
                         {p.partido}
                         {p.cargo ? ` · ${p.cargo}` : ""}
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="chip bg-primary/10 text-primary">
+<div className="flex flex-col items-end gap-2">
+                    <span className="chip bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                       {p.partido ?? "Sem partido"}
                     </span>
                     {p.ficha && p.ficha.total > 0 && (
@@ -119,7 +119,7 @@ export default function PoliticosPage() {
                 </div>
 
                 {p.biografia && (
-                  <p className="mt-3 text-sm text-neutral-dark/70">{p.biografia}</p>
+                  <p className="mt-3 text-sm text-neutral-dark/70 dark:text-neutral-300">{p.biografia}</p>
                 )}
 
                 {p.termos_busca && p.termos_busca.length > 0 && (
@@ -127,7 +127,7 @@ export default function PoliticosPage() {
                     {p.termos_busca.map((t) => (
                       <span
                         key={t}
-                        className="rounded-full bg-neutral-dark/5 px-2.5 py-0.5 text-xs text-neutral-dark/80"
+                        className="rounded-full bg-neutral-dark/5 px-2.5 py-0.5 text-xs text-neutral-dark/80 dark:bg-white/10 dark:text-neutral-300"
                       >
                         {t}
                       </span>
@@ -137,10 +137,10 @@ export default function PoliticosPage() {
               </Link>
 
               <div className="mt-4 flex items-center gap-4 text-sm font-medium">
-                <span className="text-accent hover:underline">Ver perfil →</span>
+                <span className="text-accent hover:underline dark:text-accent-light">Ver perfil →</span>
                 <Link
                   href={`/noticias?q=${encodeURIComponent(p.nome)}`}
-                  className="text-neutral-dark/60 hover:text-primary hover:underline"
+                  className="text-neutral-dark/60 hover:text-primary hover:underline dark:text-neutral-400 dark:hover:text-primary-light"
                 >
                   Ver notícias →
                 </Link>
@@ -150,8 +150,8 @@ export default function PoliticosPage() {
         </div>
 
         {!erro && politicos.length === 0 && (
-          <div className="mt-8 flex items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-16">
-            <p className="text-neutral-dark/60">
+          <div className="mt-8 flex items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-16 dark:border-white/15 dark:bg-neutral-panel">
+            <p className="text-neutral-dark/60 dark:text-neutral-400">
               Nenhum político ativo no momento.
             </p>
           </div>

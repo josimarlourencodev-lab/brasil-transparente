@@ -6,6 +6,7 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -26,7 +27,10 @@ const config: Config = {
         },
         neutral: {
           DEFAULT: "#F7F7F5",
-          dark: "#1A1A1A"
+          dark: "#1A1A1A",
+          night: "#0B0E14",
+          panel: "#141821",
+          muted: "#6B7280",
         }
       },
       fontFamily: {
