@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import { Drawer, IconButton } from "@mui/material";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -19,8 +20,8 @@ const NAV: NavItem[] = [
   { href: "/noticias", label: "Notícias" },
   { href: "/politicos", label: "Políticos" },
   { href: "/podcast", label: "Podcast" },
+  { href: "/documentacao", label: "Documentação" },
   { href: "/#sobre", label: "Sobre" },
-  { href: "/#metodologia", label: "Metodologia" },
 ];
 
 export function SiteHeader() {
@@ -63,6 +64,16 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <a
+            href="https://github.com/josimarlourencodev-lab/brasil-transparente"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden items-center gap-1.5 rounded-full border border-neutral-dark/15 px-3 py-2 text-sm font-medium text-neutral-dark/70 transition hover:bg-neutral-dark/5 hover:text-primary dark:border-white/15 dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-primary-light sm:inline-flex"
+            title="Repositório GitHub (abre em nova aba)"
+          >
+            <GitHubIcon className="h-4 w-4" />
+            GitHub
+          </a>
           <Link href="/noticias" className="btn-primary hidden sm:inline-flex">
             Acompanhar cobertura
           </Link>
@@ -107,6 +118,15 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <a
+          href="https://github.com/josimarlourencodev-lab/brasil-transparente"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl border border-neutral-dark/15 px-4 py-2.5 text-sm font-medium text-neutral-dark/70 transition hover:bg-neutral-dark/5 hover:text-primary dark:border-white/15 dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-primary-light"
+        >
+          <GitHubIcon className="h-4 w-4" />
+          Repositório GitHub
+        </a>
       </Drawer>
     </header>
   );
