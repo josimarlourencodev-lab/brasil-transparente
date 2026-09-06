@@ -1,11 +1,12 @@
 import { Text, View } from "react-native";
-import { Cores, Espacamento, Tipografia } from "../theme";
+import { Espacamento, Tipografia, useCores } from "../theme";
 
 export function AppHeader({ onPress }: { onPress?: () => void }) {
+  const c = useCores();
   return (
     <View
       style={{
-        backgroundColor: Cores.primaria,
+        backgroundColor: c.primaria,
         paddingTop: Espacamento.md + 8,
         paddingBottom: Espacamento.md,
         paddingHorizontal: Espacamento.md,
@@ -36,15 +37,16 @@ export function AppHeader({ onPress }: { onPress?: () => void }) {
 
 export function DetalheHeader({
   titulo,
-  corFundo = Cores.primaria,
+  corFundo,
 }: {
   titulo: string;
   corFundo?: string;
 }) {
+  const c = useCores();
   return (
     <View
       style={{
-        backgroundColor: corFundo,
+        backgroundColor: corFundo ?? c.primaria,
         paddingTop: Espacamento.md + 8,
         paddingBottom: Espacamento.md,
         paddingHorizontal: Espacamento.md,

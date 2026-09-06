@@ -1,5 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { Cores, Bordas, Espacamento, Sombras, Tipografia } from "../theme";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ImagemRemota } from "./ImagemRemota";
+import { Bordas, Espacamento, Tipografia, useCores } from "../theme";
 import type { Politico } from "../types";
 
 export function PoliticoCard({
@@ -9,6 +10,8 @@ export function PoliticoCard({
   politico: Politico;
   onPress: () => void;
 }) {
+  const c = useCores();
+  const styles = criarEstilos(c);
   return (
     <Pressable
       onPress={onPress}
@@ -18,11 +21,7 @@ export function PoliticoCard({
       ]}
     >
       {politico.foto_url ? (
-        <Image
-          source={{ uri: politico.foto_url }}
-          style={styles.foto}
-          resizeMode="cover"
-        />
+        <ImagemRemota uri={politico.foto_url} style={styles.foto} contentFit="cover" />
       ) : (
         <View style={[styles.foto, styles.fotoPlaceholder]}>
           <Text style={styles.inicial}>
@@ -49,7 +48,7 @@ export function PoliticoCard({
               style={[
                 styles.badgeTexto,
                 politico.ficha.indicador === "atencao" && {
-                  color: Cores.acento,
+                  color: c.acento,
                 },
               ]}
             >
@@ -64,59 +63,60 @@ export function PoliticoCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    backgroundColor: Cores.superficie,
-    borderRadius: Bordas.card,
-    padding: Espacamento.md,
-    gap: Espacamento.md,
-    borderWidth: 1,
-    borderColor: Cores.borda,
-    ...Sombras.card,
-  },
-  foto: {
-    width: 64,
-    height: 64,
-    borderRadius: 999,
-  },
-  fotoPlaceholder: {
-    backgroundColor: Cores.primariaClara,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inicial: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Cores.primaria,
-  },
-  nome: {
-    fontSize: Tipografia.corpo,
-    fontWeight: "700",
-    color: Cores.texto,
-  },
-  subtitulo: {
-    fontSize: Tipografia.detalhe,
-    fontWeight: "600",
-    color: Cores.primaria,
-    marginTop: 2,
-  },
-  bio: {
-    fontSize: Tipografia.detalhe,
-    color: Cores.textoSecundario,
-    marginTop: 4,
-  },
-  badgeFicha: {
-    backgroundColor: Cores.primariaClara,
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    marginTop: 6,
-  },
-  badgeTexto: {
-    fontSize: Tipografia.pequena,
-    fontWeight: "600",
-    color: Cores.primaria,
-  },
-});
+function criarEstilos(c: ReturnType<typeof useCores>) {
+  return StyleSheet.create({
+    card: {
+      flexDirection: "row",
+      backgroundColor: c.superficie,
+      borderRadius: Bordas.card,
+      padding: Espacamento.md,
+      gap: Espacamento.md,
+      borderWidth: 1,
+      borderColor: c.borda,
+    },
+    foto: {
+      width: 64,
+      height: 64,
+      borderRadius: 999,
+    },
+    fotoPlaceholder: {
+      backgroundColor: c.primariaClara,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    inicial: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: c.primariaTexto,
+    },
+    nome: {
+      fontSize: Tipografia.corpo,
+      fontWeight: "700",
+      color: c.texto,
+    },
+    subtitulo: {
+      fontSize: Tipografia.detalhe,
+      fontWeight: "600",
+      color: c.primariaTexto,
+      marginTop: 2,
+    },
+    bio: {
+      fontSize: Tipografia.detalhe,
+      color: c.textoSecundario,
+      marginTop: 4,
+    },
+    badgeFicha: {
+      backgroundColor: c.primariaClara,
+      alignSelf: "flex-start",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 999,
+      marginTop: 6,
+    },
+    badgeTexto: {
+      fontSize: Tipografia.pequena,
+      fontWeight: "600",
+      color: c.primariaTexto,
+    },
+  });
+}

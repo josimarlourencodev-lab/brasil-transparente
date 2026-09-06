@@ -1,6 +1,7 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Chip } from "./Chip";
-import { Cores, Bordas, Espacamento, Sombras, Tipografia } from "../theme";
+import { ImagemRemota } from "./ImagemRemota";
+import { Bordas, Espacamento, Tipografia, useCores } from "../theme";
 import type { NoticiaComPolitico } from "../types";
 
 function formatarData(iso?: string | null) {
@@ -20,6 +21,8 @@ export function NoticiaCard({
   noticia: NoticiaComPolitico;
   onPress: () => void;
 }) {
+  const c = useCores();
+  const styles = criarEstilos(c);
   return (
     <Pressable
       onPress={onPress}
@@ -29,10 +32,9 @@ export function NoticiaCard({
       ]}
     >
       {noticia.imagem_url ? (
-        <Image
-          source={{ uri: noticia.imagem_url }}
-          style={{ height: 140, backgroundColor: Cores.primariaClara }}
-          resizeMode="cover"
+        <ImagemRemota
+          uri={noticia.imagem_url}
+          style={{ height: 140, backgroundColor: c.primariaClara }}
         />
       ) : null}
       <View style={{ padding: Espacamento.md }}>
@@ -69,46 +71,48 @@ export function NoticiaCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Cores.superficie,
-    borderRadius: Bordas.card,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Cores.borda,
-    ...Sombras.card,
-  },
-  meta: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-    marginBottom: 8,
-    flexWrap: "wrap",
-  },
-  metaTexto: {
-    fontSize: Tipografia.detalhe,
-    color: Cores.textoSecundario,
-  },
-  titulo: {
-    fontSize: Tipografia.corpo,
-    fontWeight: "600",
-    color: Cores.texto,
-  },
-  resumo: {
-    fontSize: Tipografia.detalhe,
-    color: Cores.textoSecundario,
-    marginTop: 6,
-  },
-  rodape: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-    gap: 8,
-  },
-  politico: {
-    fontSize: Tipografia.detalhe,
-    fontWeight: "600",
-    color: Cores.primaria,
-    flexShrink: 1,
-  },
-});
+function criarEstilos(c: ReturnType<typeof useCores>) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: c.superficie,
+      borderRadius: Bordas.card,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: c.borda,
+    },
+    meta: {
+      flexDirection: "row",
+      gap: 8,
+      alignItems: "center",
+      marginBottom: 8,
+      flexWrap: "wrap",
+    },
+    metaTexto: {
+      fontSize: Tipografia.detalhe,
+      color: c.textoSecundario,
+      flexShrink: 1,
+    },
+    titulo: {
+      fontSize: Tipografia.corpo,
+      fontWeight: "600",
+      color: c.texto,
+    },
+    resumo: {
+      fontSize: Tipografia.detalhe,
+      color: c.textoSecundario,
+      marginTop: 6,
+    },
+    rodape: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 10,
+      gap: 8,
+    },
+    politico: {
+      fontSize: Tipografia.detalhe,
+      fontWeight: "600",
+      color: c.primariaTexto,
+      flexShrink: 1,
+    },
+  });
+}

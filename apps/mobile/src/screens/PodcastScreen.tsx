@@ -13,7 +13,7 @@ import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { AppHeader } from "../components/Header";
 import { Chip } from "../components/Chip";
 import { supabase } from "../lib/supabase";
-import { Bordas, Cores, Espacamento, Sombras, Tipografia } from "../theme";
+import { Bordas, Espacamento, Tipografia, useCores } from "../theme";
 import type { PodcastEpisodio } from "../types";
 
 function formatarDuracao(seg: number | null): string {
@@ -35,6 +35,8 @@ function formatarData(iso: string | null): string {
 }
 
 export function PodcastScreen() {
+  const c = useCores();
+  const styles = criarEstilos(c);
   const [episodios, setEpisodios] = useState<PodcastEpisodio[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,10 +78,10 @@ export function PodcastScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Cores.fundo }}>
+    <View style={{ flex: 1, backgroundColor: c.fundo }}>
       <AppHeader />
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={Cores.primaria} />
+        <ActivityIndicator style={{ marginTop: 40 }} color={c.primaria} />
       ) : (
         <FlatList
           data={episodios}
@@ -93,30 +95,49 @@ export function PodcastScreen() {
                 await carregar();
                 setRefreshing(false);
               }}
-              tintColor={Cores.primaria}
+              tintColor={c.primaria}
             />
           }
           ListEmptyComponent={
             <View style={styles.vazio}>
-              <Ionicons name="mic-off-outline" size={40} color={Cores.textoSuave} />
+              <Ionicons name="mic-off-outline" size={40} color={c.textoSuave} />
               <Text style={styles.vazioTexto}>
                 Nenhum episódio publicado ainda. Volte na próxima semana.
               </Text>
             </View>
           }
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const tocando = reproduzindo === item.id && status.playing;
             return (
               <View style={styles.card}>
-                <View style={styles.meta}>
-                  <Chip destaque>podcast</Chip>
-                  <Text style={styles.metaTexto}>
-                    {formatarData(item.publicado_em)} · {formatarDuracao(item.duracao_seg)}
-                  </Text>
+                <View style={styles.cabecalho}>
+                  <View style={styles.numeroBloco}>
+                    <Text style={styles.numero}>
+                      {String(index + 1).padStart(2, "0")}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.titulo} numberOfLines={2}>
+                      {item.titulo}
+                    </Text>
+                    <View style={styles.meta}>
+                      <Text style={styles.metaTexto}>
+                        {formatarData(item.publicado_em)} ·{" "}
+                        {formatarDuracao(item.duracao_seg)}
+                      </Text>
+                      {index === 0 ? (
+                        <Text
+                          style={[
+                            styles.maisRecente,
+                            { color: c.acento, backgroundColor: c.acentoClara },
+                          ]}
+                        >
+                          Mais recente
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
                 </View>
-                <Text style={styles.titulo} numberOfLines={2}>
-                  {item.titulo}
-                </Text>
                 {item.descricao ? (
                   <Text style={styles.descricao} numberOfLines={3}>
                     {item.descricao}
@@ -134,7 +155,9 @@ export function PodcastScreen() {
                     size={18}
                     color="#fff"
                   />
-                  <Text style={styles.botaoTexto}>{tocando ? "Pausar" : "Ouvir"}</Text>
+                  <Text style={styles.botaoTexto}>
+                    {tocando ? "Pausar" : "Ouvir"}
+                  </Text>
                 </Pressable>
               </View>
             );
@@ -145,57 +168,86 @@ export function PodcastScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Cores.superficie,
-    borderRadius: Bordas.card,
-    padding: Espacamento.md,
-    ...Sombras.card,
-  },
-  meta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: Espacamento.sm,
-  },
-  metaTexto: {
-    fontSize: Tipografia.pequena,
-    color: Cores.textoSecundario,
-  },
-  titulo: {
-    marginTop: Espacamento.sm,
-    fontSize: Tipografia.corpo,
-    fontWeight: "700",
-    color: Cores.texto,
-  },
-  descricao: {
-    marginTop: Espacamento.xs,
-    fontSize: Tipografia.detalhe,
-    color: Cores.textoSecundario,
-  },
-  botaoPlay: {
-    marginTop: Espacamento.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: Cores.primaria,
-    borderRadius: Bordas.botao,
-    paddingVertical: 10,
-  },
-  botaoTexto: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: Tipografia.detalhe,
-  },
-  vazio: {
-    alignItems: "center",
-    gap: Espacamento.sm,
-    paddingVertical: Espacamento.xl,
-  },
-  vazioTexto: {
-    color: Cores.textoSecundario,
-    fontSize: Tipografia.detalhe,
-    textAlign: "center",
-  },
-});
+function criarEstilos(c: ReturnType<typeof useCores>) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: c.superficie,
+      borderRadius: Bordas.card,
+      padding: Espacamento.md,
+      borderWidth: 1,
+      borderColor: c.borda,
+    },
+    cabecalho: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: Espacamento.sm,
+    },
+    numeroBloco: {
+      width: 40,
+      height: 40,
+      borderRadius: Bordas.botao,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.primariaClara,
+    },
+    numero: {
+      fontSize: Tipografia.subtitulo,
+      fontWeight: "700",
+      color: c.primariaTexto,
+    },
+    titulo: {
+      fontSize: Tipografia.corpo,
+      fontWeight: "700",
+      color: c.texto,
+    },
+    meta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Espacamento.sm,
+      marginTop: 2,
+      flexWrap: "wrap",
+    },
+    maisRecente: {
+      fontSize: Tipografia.pequena,
+      fontWeight: "700",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: Bordas.chip,
+      overflow: "hidden",
+    },
+    metaTexto: {
+      fontSize: Tipografia.pequena,
+      color: c.textoSecundario,
+    },
+    descricao: {
+      marginTop: Espacamento.sm,
+      fontSize: Tipografia.detalhe,
+      color: c.textoSecundario,
+    },
+    botaoPlay: {
+      marginTop: Espacamento.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      backgroundColor: c.primaria,
+      borderRadius: Bordas.botao,
+      paddingVertical: 10,
+    },
+    botaoTexto: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: Tipografia.detalhe,
+    },
+    vazio: {
+      alignItems: "center",
+      gap: Espacamento.sm,
+      paddingVertical: Espacamento.xl,
+    },
+    vazioTexto: {
+      color: c.textoSecundario,
+      fontSize: Tipografia.detalhe,
+      textAlign: "center",
+    },
+  });
+}
