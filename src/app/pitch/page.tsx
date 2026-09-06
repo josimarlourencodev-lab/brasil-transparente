@@ -77,6 +77,38 @@ export default function PitchPage() {
       </section>
 
       <main className="container-page py-12">
+        {/* Vídeo do pitch */}
+        <section className="mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-2xl font-semibold text-primary dark:text-primary-light">
+              Vídeo do pitch
+            </h2>
+            <a
+              href="/pitch/brasil-transparente-pitch.mp4"
+              download
+              className="chip bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent-light"
+            >
+              <DownloadIcon className="h-3.5 w-3.5" />
+              Baixar vídeo (.mp4)
+            </a>
+          </div>
+          <div className="card mt-4 overflow-hidden">
+            <video
+              controls
+              preload="metadata"
+              poster={SLIDES[0]}
+              className="aspect-video w-full bg-black"
+            >
+              <source src="/pitch/brasil-transparente-pitch.mp4" type="video/mp4" />
+              Seu navegador não suporta a reprodução de vídeo.
+            </video>
+            <p className="border-t border-neutral-dark/10 p-4 text-sm text-neutral-dark/70 dark:border-white/10 dark:text-neutral-300">
+              Pitch de ~3 minutos: 10 slides com narração em voz IA (PT-BR). Abaixo, os
+              slides individuais, cada narração e o roteiro completo.
+            </p>
+          </div>
+        </section>
+
         {/* Galeria de slides */}
         <div className="card overflow-hidden">
           <div className="relative aspect-video w-full bg-neutral-900">
