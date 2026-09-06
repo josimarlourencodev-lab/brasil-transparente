@@ -10,6 +10,7 @@ type Episodio = {
   titulo: string;
   descricao: string | null;
   audio_url: string;
+  thumb_url: string | null;
   duracao_seg: number | null;
   publicado_em: string;
 };
@@ -98,7 +99,16 @@ export default function PodcastPage() {
                 key={ep.id}
                 className="card overflow-hidden transition hover:shadow-glow"
               >
-                <div className="flex flex-col gap-4 p-6 sm:p-8">
+                <div className="flex flex-col gap-4 p-6 sm:flex-row sm:p-8">
+                  {ep.thumb_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ep.thumb_url}
+                      alt={`Miniatura do episódio ${ep.titulo}`}
+                      className="h-40 w-full shrink-0 self-start rounded-lg object-cover sm:h-28 sm:w-56"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-start gap-4">
                       <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-display text-lg font-semibold text-primary dark:bg-primary/20 dark:text-primary-light sm:flex">
@@ -141,6 +151,7 @@ export default function PodcastPage() {
                   >
                     Seu navegador não suporta o player de áudio.
                   </audio>
+                  </div>
                 </div>
               </article>
             ))}
