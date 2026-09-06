@@ -164,6 +164,77 @@ def _upload_audio(client, episodio: str, audio: bytes) -> str:
     return client.storage.from_("podcast").get_public_url(f"{episodio}.mp3")
 
 
+def _upload_thumb(client, episodio: str, thumb: bytes) -> str:
+    client.storage.from_("podcast").upload(
+        path=f"{episodio}.jpg",
+        file=thumb,
+        file_options={"content-type": "image/jpeg", "upsert": "true"},
+    )
+    return client.storage.from_("podcast").get_public_url(f"{episodio}.jpg")
+
+
+def _gerar_thumb(titulo: str) -> bytes:
+    """Gera a thumbnail do episódio (JPEG 1200x675, paleta do site)."""
+    import io
+
+    from PIL import Image, ImageDraw, ImageFont
+
+    LARGURA, ALTURA = 1200, 675
+
+    def grad(c1: str, c2: str, t: float) -> tuple[int, int, int]:
+        a = tuple(int(c1[i:i + 2], 16) for i in (1, 3, 5))
+        b = tuple(int(c2[i:i + 2], 16) for i in (1, 3, 5))
+        return tuple(round(a[i] + (b[i] - a[i]) * min(max(t, 0.0), 1.0)) for i in range(3))
+
+    def fonte(tamanho):
+        for caminho in (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "DejaVuSans-Bold.ttf",
+            "DejaVuSans.ttf",
+        ):
+            try:
+                return ImageFont.truetype(caminho, tamanho)
+            except OSError:
+                continue
+        return ImageFont.load_default(size=tamanho)
+
+    img = Image.new("RGB", (LARGURA, ALTURA), "#0F4C81")
+    draw = ImageDraw.Draw(img)
+
+    for x in range(LARGURA):
+        draw.line([(x, 0), (x, 130)], fill=grad("#1E6FB8", "#0B3A63", x / LARGURA))
+    for y in range(90):
+        draw.line([(0, ALTURA - 90 + y), (LARGURA, ALTURA - 90 + y)],
+                  fill=grad("#C8102E", "#8E0B20", y / 90))
+
+    f_logo = fonte(30)
+    m = "BRASIL TRANSPARENTE"
+    caixa = draw.textbbox((0, 0), m, font=f_logo)
+    draw.text(((LARGURA - caixa[2]) // 2, 44), m, font=f_logo, fill="#FFFFFF")
+    draw.rectangle(((LARGURA - 44) // 2, 92, (LARGURA + 44) // 2, 98), fill="#C8102E")
+
+    f_titulo = fonte(76)
+    while f_titulo.size > 34:
+        caixa = draw.textbbox((0, 0), titulo, font=f_titulo)
+        if caixa[2] - caixa[0] <= LARGURA - 160:
+            break
+        f_titulo = fonte(f_titulo.size - 6)
+    caixa = draw.textbbox((0, 0), titulo, font=f_titulo)
+    draw.text(((LARGURA - caixa[2]) // 2, (ALTURA - caixa[3]) // 2 - 8), titulo,
+              font=f_titulo, fill="#FFFFFF")
+
+    f_rodape = fonte(30)
+    t2 = "PODCAST SEMANAL"
+    caixa2 = draw.textbbox((0, 0), t2, font=f_rodape)
+    draw.text(((LARGURA - caixa2[2]) // 2, ALTURA - 58), t2, font=f_rodape,
+              fill="#FFFFFF")
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=88)
+    return buf.getvalue()
+
+
 def _duracao_aprox(texto: str) -> int:
     # ~150 palavras/min em locução brasileira; arredondando para segundos.
     palavras = len(texto.split())
@@ -171,7 +242,7 @@ def _duracao_aprox(texto: str) -> int:
 
 
 def _registrar_episodio(client, titulo: str, descricao: str, roteiro: str,
-                        audio_url: str) -> bool:
+                        audio_url: str, thumb_url: str | None = None) -> bool:
     data = {
         "titulo": titulo,
         "descricao": descricao,
@@ -180,6 +251,8 @@ def _registrar_episodio(client, titulo: str, descricao: str, roteiro: str,
         "duracao_seg": _duracao_aprox(roteiro),
         "publicado_em": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
+    if thumb_url:
+        data["thumb_url"] = thumb_url
     resp = client.table("podcast_episodios").insert(data).execute()
     return bool(resp.data)
 
@@ -269,12 +342,21 @@ def main(argv=None) -> int:
     audio_url = _upload_audio(client, episodio, audio)
     print(f"[podcast] áudio publicado: {audio_url}")
 
+    thumb_url = None
+    try:
+        thumb = _gerar_thumb(titulo)
+        thumb_url = _upload_thumb(client, episodio, thumb)
+        print(f"[podcast] thumbnail publicada: {thumb_url}")
+    except Exception as exc:  # noqa: BLE001 — a thumb não pode impedir o episódio
+        print(f"[podcast] aviso: falha ao publicar thumbnail: {exc}")
+
     ok = _registrar_episodio(
         client,
         titulo,
         "Episódio semanal com os destaques monitorados pelo Brasil Transparente.",
         roteiro,
         audio_url,
+        thumb_url,
     )
     if ok:
         print("[podcast] episódio registrado com sucesso")

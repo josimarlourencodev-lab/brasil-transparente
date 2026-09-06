@@ -49,11 +49,6 @@ export function SiteFooter() {
                   Metodologia
                 </Link>
               </li>
-              <li>
-                <Link href="/admin" className="text-white/70 transition hover:text-white">
-                  Painel do auditor
-                </Link>
-              </li>
             </ul>
           </nav>
         </div>
