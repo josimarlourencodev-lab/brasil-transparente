@@ -36,6 +36,11 @@ export function SiteFooter() {
                   Sobre o projeto
                 </Link>
               </li>
+              <li>
+                <Link href="/pitch" className="text-white/70 transition hover:text-white">
+                  Pitch
+                </Link>
+              </li>
             </ul>
           </nav>
 
@@ -48,6 +53,34 @@ export function SiteFooter() {
                 <Link href="/#metodologia" className="text-white/70 transition hover:text-white">
                   Metodologia
                 </Link>
+              </li>
+            </ul>
+          </nav>
+
+          <nav aria-label="Rodapé — recursos">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+              Recursos
+            </p>
+            <ul className="mt-3 space-y-2">
+              <li>
+                <a
+                  href="https://josimarlourencodev-lab.github.io/brasil-transparente"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/70 transition hover:text-white"
+                >
+                  Documentação
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/josimarlourencodev-lab/brasil-transparente"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/70 transition hover:text-white"
+                >
+                  Código-fonte (GitHub)
+                </a>
               </li>
             </ul>
           </nav>
