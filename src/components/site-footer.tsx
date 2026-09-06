@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
 export function SiteFooter() {
   return (
@@ -57,29 +58,30 @@ export function SiteFooter() {
             </ul>
           </nav>
 
-          <nav aria-label="Rodapé — recursos">
+          <nav aria-label="Rodapé — documentação e código">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
               Recursos
             </p>
             <ul className="mt-3 space-y-2">
               <li>
-                <a
-                  href="https://josimarlourencodev-lab.github.io/brasil-transparente"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/70 transition hover:text-white"
-                >
+                <Link href="/documentacao" className="text-white/70 transition hover:text-white">
                   Documentação
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/pitch" className="text-white/70 transition hover:text-white">
+                  Pitch
+                </Link>
               </li>
               <li>
                 <a
                   href="https://github.com/josimarlourencodev-lab/brasil-transparente"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-white/70 transition hover:text-white"
+                  className="inline-flex items-center gap-1.5 text-white/70 transition hover:text-white"
                 >
-                  Código-fonte (GitHub)
+                  <GitHubIcon className="h-3.5 w-3.5" />
+                  Repositório GitHub
                 </a>
               </li>
             </ul>
