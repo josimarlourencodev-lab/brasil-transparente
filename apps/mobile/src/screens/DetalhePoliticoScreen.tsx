@@ -13,10 +13,29 @@ import { Chip } from "../components/Chip";
 import { NoticiaCard } from "../components/NoticiaCard";
 import { supabase } from "../lib/supabase";
 import { Cores, Espacamento, Tipografia } from "../theme";
-import type { NoticiaComPolitico, Politico } from "../types";
+import type { CasoFicha, NoticiaComPolitico, Politico } from "../types";
 import type { RootStackParamList } from "../navigation/types";
 
 type Rota = RouteProp<RootStackParamList, "DetalhePolitico">;
+
+const ROTULO_TIPO: Record<string, string> = {
+  processo: "Processo",
+  investigacao: "Investigação",
+  denuncia: "Denúncia",
+  condenacao: "Condenação",
+  inelegibilidade: "Inelegibilidade",
+  cassacao: "Cassação",
+  contradicao: "Contradição",
+  outro: "Caso documentado",
+};
+
+const ROTULO_STATUS: Record<string, string> = {
+  em_andamento: "Em andamento",
+  arquivado: "Arquivado",
+  condenado: "Condenado",
+  absolvido: "Absolvido",
+  sem_informacao: "Sem informação",
+};
 
 export function DetalhePoliticoScreen() {
   const route = useRoute<Rota>();
@@ -25,6 +44,7 @@ export function DetalhePoliticoScreen() {
   const { id } = route.params;
   const [politico, setPolitico] = useState<Politico | null>(null);
   const [noticias, setNoticias] = useState<NoticiaComPolitico[]>([]);
+  const [ficha, setFicha] = useState<CasoFicha[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +75,11 @@ export function DetalhePoliticoScreen() {
             : await buscarPorNome(pData.nome)
         );
       }
+      const { data: fData, error: fError } = await supabase
+        .from("ficha_politico")
+        .select("*")
+        .eq("politico_id", id);
+      if (!fError && !stale) setFicha(fData ?? []);
       if (!stale) setLoading(false);
     })();
     return () => {
@@ -149,6 +174,78 @@ export function DetalhePoliticoScreen() {
             {politico.biografia}
           </Text>
         ) : null}
+
+        <Text
+          style={{
+            fontSize: Tipografia.subtitulo,
+            fontWeight: "700",
+            color: Cores.texto,
+            marginTop: Espacamento.sm,
+          }}
+        >
+          Ficha
+        </Text>
+
+        {ficha.length === 0 ? (
+          <Text
+            style={{
+              fontSize: Tipografia.detalhe,
+              color: Cores.textoSecundario,
+            }}
+          >
+            Nenhum caso documentado por fontes públicas até o momento.
+          </Text>
+        ) : (
+          ficha.map((c) => (
+            <View
+              key={String(c.id)}
+              style={{
+                backgroundColor: Cores.superficie,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: Cores.borda,
+                padding: Espacamento.md,
+                gap: Espacamento.sm,
+              }}
+            >
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Chip destaque>{ROTULO_TIPO[c.tipo] ?? "Caso documentado"}</Chip>
+                <Chip>{ROTULO_STATUS[c.status] ?? "Sem informação"}</Chip>
+                {c.orgao ? (
+                  <Text
+                    style={{
+                      fontSize: Tipografia.pequena,
+                      color: Cores.textoSecundario,
+                      alignSelf: "center",
+                    }}
+                  >
+                    {c.orgao}
+                  </Text>
+                ) : null}
+              </View>
+              <Text
+                style={{
+                  fontSize: Tipografia.corpo,
+                  fontWeight: "700",
+                  color: Cores.texto,
+                }}
+              >
+                {c.titulo}
+              </Text>
+              {c.descricao ? (
+                <Text
+                  style={{
+                    fontSize: Tipografia.detalhe,
+                    lineHeight: 19,
+                    color: Cores.textoSecundario,
+                  }}
+                >
+                  {c.descricao}
+                </Text>
+              ) : null}
+            </View>
+          ))
+        )}
 
         <Text
           style={{

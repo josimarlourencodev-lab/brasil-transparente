@@ -19,6 +19,12 @@ const config: Config = {
           DEFAULT: "#C8102E",
           light: "#E53935"
         },
+        success: {
+          DEFAULT: "#1A7F4C"
+        },
+        aviso: {
+          DEFAULT: "#B7791F"
+        },
         neutral: {
           DEFAULT: "#F7F7F5",
           dark: "#1A1A1A",
