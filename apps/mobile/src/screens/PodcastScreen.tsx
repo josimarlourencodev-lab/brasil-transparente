@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAudioPlayerStatus } from "expo-audio";
 import { AppHeader } from "../components/Header";
+import { ImagemRemota } from "../components/ImagemRemota";
 import { audioPlayer } from "../lib/audio";
 import { supabase } from "../lib/supabase";
 import { Bordas, Espacamento, Tipografia, useCores } from "../theme";
@@ -48,7 +49,7 @@ export function PodcastScreen() {
   async function carregar() {
     const { data, error } = await supabase
       .from("podcast_episodios")
-      .select("id, titulo, descricao, audio_url, duracao_seg, publicado_em")
+      .select("id, titulo, descricao, audio_url, thumb_url, duracao_seg, publicado_em")
       .order("publicado_em", { ascending: false })
       .limit(30);
     if (!error) setEpisodios(data ?? []);
@@ -69,7 +70,11 @@ export function PodcastScreen() {
   function ativarTelaBloqueio(ep: PodcastEpisodio) {
     player.setActiveForLockScreen(
       true,
-      { title: ep.titulo, artist: "Brasil Transparente" },
+      {
+        title: ep.titulo,
+        artist: "Brasil Transparente",
+        artworkUrl: ep.thumb_url ?? undefined,
+      },
       { showSeekBackward: true, showSeekForward: true }
     );
   }
@@ -122,6 +127,13 @@ export function PodcastScreen() {
             const tocando = reproduzindo === item.id && status.playing;
             return (
               <View style={styles.card}>
+                {item.thumb_url ? (
+                  <ImagemRemota
+                    uri={item.thumb_url}
+                    style={styles.thumb}
+                    contentFit="cover"
+                  />
+                ) : null}
                 <View style={styles.cabecalho}>
                   <View style={styles.numeroBloco}>
                     <Text style={styles.numero}>
@@ -188,6 +200,13 @@ function criarEstilos(c: ReturnType<typeof useCores>) {
       padding: Espacamento.md,
       borderWidth: 1,
       borderColor: c.borda,
+    },
+    thumb: {
+      width: "100%",
+      aspectRatio: 16 / 9,
+      borderRadius: Bordas.card,
+      marginBottom: Espacamento.sm,
+      backgroundColor: c.superficie,
     },
     cabecalho: {
       flexDirection: "row",
