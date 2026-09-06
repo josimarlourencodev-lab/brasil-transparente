@@ -7,7 +7,10 @@ Registro detalhado do que foi construído até agora, área por área.
 - Página pública de **notícias**, **políticos** e **detalhe** de cada um, com modo claro/escuro e busca.
 - **Página de podcast** (`/podcast`) listando episódios com thumbnail, duração, data e player `<audio>`.
 - **API pública** (`/api/noticias`, `/api/politicos`, `/api/podcast/episodios`) servindo dados com RLS público.
-- **Painel `/admin`** — login com `ADMIN_PASSWORD` (cookie HttpOnly, comparação em tempo constante) e visualização por status.
+- **Painel `/admin`** — login com `ADMIN_PASSWORD` (cookie HttpOnly, comparação em tempo constante), visualização por status e **adição/remoção manual de matérias** (upsert por `url` e `DELETE` por `id`).
+- **Página `/pitch`** — apresentação do projeto: 10 slides (1920×1080, paleta `#0F4C81`/`#C8102E`), narração em voz IA (`edge-tts`, PT-BR), player de áudio por slide, **vídeo MP4** pronto com player/download e roteiro com download.
+- **Página `/documentacao`** — documentação interna no mesmo Design System (sobre, funcionamento autônomo, metodologia, princípios/código de conduta e acessos), sem sair do portal.
+- **Navegação** — "GitHub" (nova aba) e "Documentação" no header; "O Brasil Transparente" (pitch), "Documentação" e "Repositório GitHub" no rodapé.
 - **PWA** — manifest e service worker (offline básico).
 - **Correções** ao longo do tempo: dark mode, layout responsivo, remoção do link "Painel do auditor" do rodapé.
 
