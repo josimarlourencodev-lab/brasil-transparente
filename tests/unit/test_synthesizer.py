@@ -262,3 +262,33 @@ def test_call_429_com_espera_longa_desiste_imediatamente(monkeypatch):
     assert out is None
     assert fake.call_count == 1  # desistiu na primeira tentativa, sem esperar 1h
     _reset_rate_state()
+
+def test_synthesize_relevante_false_marca_fora_do_tema(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "teste")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    payload = json.dumps({"relevante": False})
+    resp = {"choices": [{"message": {"content": payload}}]}
+    fake = FakePost(FakePost.Resp(resp))
+    monkeypatch.setattr("synthesizer.requests.post", fake)
+
+    item = synthesize_item({"titulo": "Título de shows e famosos", "url": "https://x.com/fama"})
+    assert item["relevante"] is False
+    assert item["status_sintese"] == "fora_do_tema"
+
+
+def test_synthesize_sem_campo_relevante_considera_relevante(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", "teste")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    payload = json.dumps({
+        "resumo": "Relatoria avançou.",
+        "categoria": "Legislação",
+        "envolvidos": ["Politico A"],
+        "contradicao": {"detectada": False, "descricao": "", "referencias": []},
+    })
+    resp = {"choices": [{"message": {"content": payload}}]}
+    fake = FakePost(FakePost.Resp(resp))
+    monkeypatch.setattr("synthesizer.requests.post", fake)
+
+    item = synthesize_item({"titulo": "Votação", "url": "https://x.com/2"})
+    assert item["relevante"] is True
+    assert item["status_sintese"] == "ok"
