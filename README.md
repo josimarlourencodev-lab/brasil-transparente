@@ -2,6 +2,8 @@
 
 Portal autônomo, neutro e independente de monitoramento de notícias e histórico de políticos atuais do Brasil.
 
+> 📚 **Documentação completa**: <https://josimarlourencodev-lab.github.io/brasil-transparente> — histórico, arquitetura, banco, ingestão, podcast, mobile, deploy, segurança e uso.
+
 ## Visão Geral
 
 O Brasil Transparente fornece um histórico contextualizado de políticos brasileiros — casos antigos e contradições passadas — comparando fontes oficiais e canais de oposição. O objetivo é garantir visibilidade além dos períodos eleitorais, promovendo transparência e accountability.

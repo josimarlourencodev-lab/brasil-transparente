@@ -1,0 +1,23 @@
+- [Início](/)
+- **Histórico**
+  - [O que já foi feito](guia-rapido.md)
+  - [Entregas por área](entregas.md)
+  - [Releases](releases.md)
+- **Arquitetura**
+  - [Visão geral](arquitetura.md)
+  - [Banco de dados](banco-de-dados.md)
+  - [Ingestão](ingestao.md)
+  - [Síntese por IA](sintese.md)
+  - [Podcast](podcast.md)
+  - [Mobile](mobile.md)
+- **Desenvolvimento**
+  - [Começando](comecando.md)
+  - [Fluxo de trabalho (git)](fluxo-de-trabalho.md)
+  - [Testes e CI](testes-ci.md)
+- **Operação**
+  - [Deploy e publicação](deploy.md)
+  - [Segurança](seguranca.md)
+- **Uso**
+  - [Portal](uso-portal.md)
+  - [Painel /admin](uso-admin.md)
+  - [App mobile](uso-mobile.md)
