@@ -108,6 +108,9 @@ def upsert_items(client, items: list[dict], politico_cache: dict[str, int] | Non
     politico_cache = politico_cache or {}
     saved = 0
     for item in items:
+        if not item.get("relevante", True):
+            print(f"  - ignorada (fora do tema): {item.get('titulo', '')[:70]}")
+            continue
         data = {
             "titulo": item["titulo"],
             "url": item["url"],
