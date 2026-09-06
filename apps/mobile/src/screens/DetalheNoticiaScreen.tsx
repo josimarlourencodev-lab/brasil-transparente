@@ -11,7 +11,7 @@ import { useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import { Chip } from "../components/Chip";
 import { supabase } from "../lib/supabase";
-import { Cores, Espacamento, Tipografia } from "../theme";
+import { Espacamento, Tipografia, useCores } from "../theme";
 import type { NoticiaComPolitico } from "../types";
 import type { RootStackParamList } from "../navigation/types";
 
@@ -29,6 +29,7 @@ function formatarData(iso?: string | null) {
 }
 
 export function DetalheNoticiaScreen() {
+  const c = useCores();
   const route = useRoute<Rota>();
   const { id } = route.params;
   const [noticia, setNoticia] = useState<NoticiaComPolitico | null>(null);
@@ -50,7 +51,7 @@ export function DetalheNoticiaScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: Cores.fundo }}
+      style={{ flex: 1, backgroundColor: c.fundo }}
       contentContainerStyle={{ paddingBottom: Espacamento.xl }}
     >
       <View style={{ padding: Espacamento.md, gap: Espacamento.md }}>
@@ -65,7 +66,7 @@ export function DetalheNoticiaScreen() {
         >
           <Chip>{noticia?.categoria ?? "—"}</Chip>
           {noticia?.tipo_fonte ? (
-            <Text style={{ fontSize: Tipografia.detalhe, color: Cores.textoSecundario }}>
+            <Text style={{ fontSize: Tipografia.detalhe, color: c.textoSecundario }}>
               {noticia.tipo_fonte}
             </Text>
           ) : null}
@@ -76,26 +77,26 @@ export function DetalheNoticiaScreen() {
           style={{
             fontSize: Tipografia.subtitulo,
             fontWeight: "700",
-            color: Cores.texto,
+            color: c.texto,
             letterSpacing: -0.2,
           }}
         >
           {noticia?.titulo ?? ""}
         </Text>
 
-        <Text style={{ fontSize: Tipografia.detalhe, color: Cores.textoSecundario }}>
+        <Text style={{ fontSize: Tipografia.detalhe, color: c.textoSecundario }}>
           {formatarData(noticia?.publicado_em)}
         </Text>
 
         {noticia?.politico ? (
           <View
             style={{
-              backgroundColor: Cores.primariaClara,
+              backgroundColor: c.primariaClara,
               padding: Espacamento.md,
               borderRadius: 12,
             }}
           >
-            <Text style={{ fontSize: Tipografia.detalhe, color: Cores.primaria }}>
+            <Text style={{ fontSize: Tipografia.detalhe, color: c.primariaTexto }}>
               <Text style={{ fontWeight: "700" }}>Político:</Text>{" "}
               {noticia.politico.nome}
               {noticia.politico.partido ? ` · ${noticia.politico.partido}` : ""}
@@ -108,7 +109,7 @@ export function DetalheNoticiaScreen() {
             style={{
               fontSize: Tipografia.corpo,
               lineHeight: 22,
-              color: Cores.texto,
+              color: c.texto,
             }}
           >
             {noticia.resumo}
@@ -118,24 +119,24 @@ export function DetalheNoticiaScreen() {
         {noticia?.contradicao_descricao ? (
           <View
             style={{
-              backgroundColor: Cores.acentoClara,
+              backgroundColor: c.acentoClara,
               padding: Espacamento.md,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: Cores.acento,
+              borderColor: c.acento,
             }}
           >
             <Text
               style={{
                 fontSize: Tipografia.detalhe,
                 fontWeight: "700",
-                color: Cores.acento,
+                color: c.acento,
                 marginBottom: 4,
               }}
             >
               Contraposição encontrada
             </Text>
-            <Text style={{ fontSize: Tipografia.detalhe, color: Cores.texto }}>
+            <Text style={{ fontSize: Tipografia.detalhe, color: c.texto }}>
               {noticia.contradicao_descricao}
             </Text>
           </View>
@@ -146,7 +147,7 @@ export function DetalheNoticiaScreen() {
             onPress={() => Linking.openURL(noticia.url)}
             style={({ pressed }) => [
               {
-                backgroundColor: Cores.primaria,
+                backgroundColor: c.primaria,
                 padding: Espacamento.md,
                 borderRadius: 12,
                 alignItems: "center",
@@ -162,7 +163,7 @@ export function DetalheNoticiaScreen() {
       </View>
 
       {!noticia ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={Cores.primaria} />
+        <ActivityIndicator style={{ marginTop: 40 }} color={c.primaria} />
       ) : null}
     </ScrollView>
   );

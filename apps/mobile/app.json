@@ -5,10 +5,12 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "brasiltransparente",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#0F4C81",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain"
     },
     "ios": {
@@ -18,7 +20,8 @@
     "android": {
       "package": "br.org.brasiltransparente.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0F4C81"
+        "backgroundColor": "#0F4C81",
+        "foregroundImage": "./assets/adaptive-icon.png"
       }
     },
     "extra": {
@@ -26,7 +29,8 @@
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ3Z3b2Vqa3V0dnRvcWNobW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMDEwNTUsImV4cCI6MjEwMzg3NzA1NX0.sEUnDqO3pqC37tJNOCgVnjMolBn6yjMp2jo8Mr4JErI"
     },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      "expo-image"
     ]
   }
 }

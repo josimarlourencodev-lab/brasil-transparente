@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Text, View } from "react-native";
-import { Cores, Tipografia } from "../theme";
+import { Tipografia, useCores } from "../theme";
 
 export function Chip({
   children,
@@ -9,10 +9,11 @@ export function Chip({
   children: ReactNode;
   destaque?: boolean;
 }) {
+  const c = useCores();
   return (
     <View
       style={{
-        backgroundColor: destaque ? Cores.acentoClara : Cores.primariaClara,
+        backgroundColor: destaque ? c.acentoClara : c.primariaClara,
         paddingHorizontal: 10,
         paddingVertical: 3,
         borderRadius: 999,
@@ -22,7 +23,7 @@ export function Chip({
         style={{
           fontSize: Tipografia.pequena,
           fontWeight: "600",
-          color: destaque ? Cores.acento : Cores.primaria,
+          color: destaque ? c.acento : c.primariaTexto,
         }}
       >
         {children}

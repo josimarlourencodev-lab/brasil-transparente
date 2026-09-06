@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Chip } from "../components/Chip";
+import { ImagemRemota } from "../components/ImagemRemota";
 import { NoticiaCard } from "../components/NoticiaCard";
 import { supabase } from "../lib/supabase";
-import { Cores, Espacamento, Tipografia } from "../theme";
+import { Espacamento, Tipografia, useCores } from "../theme";
 import type { CasoFicha, NoticiaComPolitico, Politico } from "../types";
 import type { RootStackParamList } from "../navigation/types";
 
@@ -38,6 +33,7 @@ const ROTULO_STATUS: Record<string, string> = {
 };
 
 export function DetalhePoliticoScreen() {
+  const c = useCores();
   const route = useRoute<Rota>();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -100,21 +96,20 @@ export function DetalhePoliticoScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: Cores.fundo }}
+      style={{ flex: 1, backgroundColor: c.fundo }}
       contentContainerStyle={{ paddingBottom: Espacamento.xl }}
     >
       <View style={{ padding: Espacamento.md, gap: Espacamento.md }}>
         <View style={{ alignItems: "center", paddingTop: Espacamento.md }}>
           {politico?.foto_url ? (
-            <Image
-              source={{ uri: politico.foto_url }}
+            <ImagemRemota
+              uri={politico.foto_url}
               style={{
                 width: 96,
                 height: 96,
                 borderRadius: 999,
-                backgroundColor: Cores.primariaClara,
+                backgroundColor: c.primariaClara,
               }}
-              resizeMode="cover"
             />
           ) : (
             <View
@@ -122,7 +117,7 @@ export function DetalhePoliticoScreen() {
                 width: 96,
                 height: 96,
                 borderRadius: 999,
-                backgroundColor: Cores.primariaClara,
+                backgroundColor: c.primariaClara,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -131,7 +126,7 @@ export function DetalhePoliticoScreen() {
                 style={{
                   fontSize: 36,
                   fontWeight: "700",
-                  color: Cores.primaria,
+                  color: c.primariaTexto,
                 }}
               >
                 {politico?.nome.charAt(0).toUpperCase() ?? "?"}
@@ -142,7 +137,7 @@ export function DetalhePoliticoScreen() {
             style={{
               fontSize: Tipografia.subtitulo,
               fontWeight: "700",
-              color: Cores.texto,
+              color: c.texto,
               marginTop: Espacamento.md,
               textAlign: "center",
             }}
@@ -153,7 +148,7 @@ export function DetalhePoliticoScreen() {
             style={{
               fontSize: Tipografia.detalhe,
               fontWeight: "600",
-              color: Cores.primaria,
+              color: c.primariaTexto,
               marginTop: 4,
             }}
           >
@@ -167,7 +162,7 @@ export function DetalhePoliticoScreen() {
             style={{
               fontSize: Tipografia.corpo,
               lineHeight: 22,
-              color: Cores.textoSecundario,
+              color: c.textoSecundario,
               textAlign: "center",
             }}
           >
@@ -179,7 +174,7 @@ export function DetalhePoliticoScreen() {
           style={{
             fontSize: Tipografia.subtitulo,
             fontWeight: "700",
-            color: Cores.texto,
+            color: c.texto,
             marginTop: Espacamento.sm,
           }}
         >
@@ -190,36 +185,36 @@ export function DetalhePoliticoScreen() {
           <Text
             style={{
               fontSize: Tipografia.detalhe,
-              color: Cores.textoSecundario,
+              color: c.textoSecundario,
             }}
           >
             Nenhum caso documentado por fontes públicas até o momento.
           </Text>
         ) : (
-          ficha.map((c) => (
+          ficha.map((caso) => (
             <View
-              key={String(c.id)}
+              key={String(caso.id)}
               style={{
-                backgroundColor: Cores.superficie,
+                backgroundColor: c.superficie,
                 borderRadius: 16,
                 borderWidth: 1,
-                borderColor: Cores.borda,
+                borderColor: c.borda,
                 padding: Espacamento.md,
                 gap: Espacamento.sm,
               }}
             >
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <Chip destaque>{ROTULO_TIPO[c.tipo] ?? "Caso documentado"}</Chip>
-                <Chip>{ROTULO_STATUS[c.status] ?? "Sem informação"}</Chip>
-                {c.orgao ? (
+                <Chip destaque>{ROTULO_TIPO[caso.tipo] ?? "Caso documentado"}</Chip>
+                <Chip>{ROTULO_STATUS[caso.status] ?? "Sem informação"}</Chip>
+                {caso.orgao ? (
                   <Text
                     style={{
                       fontSize: Tipografia.pequena,
-                      color: Cores.textoSecundario,
+                      color: c.textoSecundario,
                       alignSelf: "center",
                     }}
                   >
-                    {c.orgao}
+                    {caso.orgao}
                   </Text>
                 ) : null}
               </View>
@@ -227,20 +222,20 @@ export function DetalhePoliticoScreen() {
                 style={{
                   fontSize: Tipografia.corpo,
                   fontWeight: "700",
-                  color: Cores.texto,
+                  color: c.texto,
                 }}
               >
-                {c.titulo}
+                {caso.titulo}
               </Text>
-              {c.descricao ? (
+              {caso.descricao ? (
                 <Text
                   style={{
                     fontSize: Tipografia.detalhe,
                     lineHeight: 19,
-                    color: Cores.textoSecundario,
+                    color: c.textoSecundario,
                   }}
                 >
-                  {c.descricao}
+                  {caso.descricao}
                 </Text>
               ) : null}
             </View>
@@ -251,7 +246,7 @@ export function DetalhePoliticoScreen() {
           style={{
             fontSize: Tipografia.subtitulo,
             fontWeight: "700",
-            color: Cores.texto,
+            color: c.texto,
             marginTop: Espacamento.sm,
           }}
         >
@@ -272,7 +267,7 @@ export function DetalhePoliticoScreen() {
           <Text
             style={{
               fontSize: Tipografia.detalhe,
-              color: Cores.textoSecundario,
+              color: c.textoSecundario,
               textAlign: "center",
               marginTop: Espacamento.sm,
             }}
@@ -282,7 +277,7 @@ export function DetalhePoliticoScreen() {
         ) : null}
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 24 }} color={Cores.primaria} />
+          <ActivityIndicator style={{ marginTop: 24 }} color={c.primaria} />
         ) : null}
 
         {politico ? (
@@ -296,7 +291,7 @@ export function DetalhePoliticoScreen() {
         <Text
           style={{
             fontSize: Tipografia.detalhe,
-            color: Cores.textoSecundario,
+            color: c.textoSecundario,
             textAlign: "center",
             marginTop: 40,
           }}
