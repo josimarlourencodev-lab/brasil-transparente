@@ -52,6 +52,7 @@ export interface PodcastEpisodio {
   titulo: string;
   descricao: string | null;
   audio_url: string;
+  thumb_url: string | null;
   duracao_seg: number | null;
   publicado_em: string | null;
 }
