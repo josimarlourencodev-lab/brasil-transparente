@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
+import {
+  rotuloStatusCaso,
+  rotuloTipoCaso,
+  type CasoFicha,
+} from "@/lib/ficha";
 
 type Politico = {
   id: number;
@@ -30,6 +35,7 @@ type Noticia = {
 type Perfil = {
   politico: Politico;
   noticias: Noticia[];
+  ficha: CasoFicha[];
 };
 
 const FALHA_LOADING = (
@@ -81,7 +87,7 @@ export function PerfilContent({ id }: { id: number }) {
     );
   }
 
-  const { politico, noticias } = perfil;
+  const { politico, noticias, ficha } = perfil;
 
   return (
     <div className="min-h-screen">
@@ -131,6 +137,71 @@ export function PerfilContent({ id }: { id: number }) {
             )}
           </div>
         </div>
+
+        <h2 className="prose-title mt-10">Ficha</h2>
+        {ficha.length === 0 ? (
+          <p className="mt-2 text-sm text-neutral-dark/60">
+            Nenhum caso documentado por fontes públicas até o momento.
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-neutral-dark/60">
+              Casos documentados a partir de fontes públicas e veículos de
+              imprensa.
+            </p>
+            <div className="mt-6 space-y-4">
+              {ficha.map((c) => (
+                <article
+                  key={c.id}
+                  className="card flex flex-col gap-3 p-6"
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="chip bg-primary/10 text-primary">
+                      {rotuloTipoCaso(c.tipo)}
+                    </span>
+                    <span className="chip bg-neutral-dark/5 text-neutral-dark/80">
+                      {rotuloStatusCaso(c.status)}
+                    </span>
+                    {c.orgao && (
+                      <span className="text-neutral-dark/60">{c.orgao}</span>
+                    )}
+                    {c.data_fato && (
+                      <time
+                        dateTime={c.data_fato}
+                        className="text-neutral-dark/60"
+                      >
+                        {new Date(c.data_fato).toLocaleDateString("pt-BR")}
+                      </time>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-semibold text-primary">
+                    {c.titulo}
+                  </h3>
+                  {c.descricao && (
+                    <p className="text-sm leading-relaxed text-neutral-dark/70">
+                      {c.descricao}
+                    </p>
+                  )}
+                  {c.fontes && c.fontes.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {c.fontes.map((u, i) => (
+                        <a
+                          key={`${u}-${i}`}
+                          href={u}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-semibold text-accent hover:underline"
+                        >
+                          Fonte {c.fontes.length > 1 ? i + 1 : ""} ↗
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </>
+        )}
 
         <h2 className="prose-title mt-10">
           Notícias relacionadas

@@ -23,6 +23,24 @@ export interface Politico {
   biografia: string | null;
   foto_url: string | null;
   termos_busca: string[] | null;
+  ficha?: {
+    total: number;
+    indicador: "sem_casos" | "com_casos" | "atencao";
+  };
+}
+
+export interface CasoFicha {
+  id: number;
+  politico_id: number;
+  tipo: string;
+  status: string;
+  titulo: string;
+  descricao: string | null;
+  orgao: string | null;
+  data_fato: string | null;
+  fontes: string[];
+  criado_em: string;
+  atualizado_em: string;
 }
 
 export interface NoticiaComPolitico extends Noticia {

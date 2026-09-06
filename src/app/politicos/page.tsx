@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { IndicadorFicha } from "@/lib/ficha";
 
 type Politico = {
   id: number;
@@ -11,7 +12,28 @@ type Politico = {
   biografia: string | null;
   foto_url: string | null;
   termos_busca: string[] | null;
+  ficha?: {
+    total: number;
+    indicador: IndicadorFicha;
+  };
 };
+
+function rotuloFicha(indicador: IndicadorFicha, total: number): string {
+  if (indicador === "sem_casos") return "Ficha limpa";
+  if (total === 1) return "1 caso documentado";
+  return `${total} casos documentados`;
+}
+
+function classesBadgeFicha(indicador: IndicadorFicha): string {
+  switch (indicador) {
+    case "sem_casos":
+      return "bg-success/10 text-success";
+    case "atencao":
+      return "bg-accent/10 text-accent";
+    default:
+      return "bg-aviso/10 text-aviso";
+  }
+}
 
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/).filter(Boolean);
@@ -81,9 +103,19 @@ export default function PoliticosPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="chip bg-primary/10 text-primary">
-                    {p.partido ?? "Sem partido"}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="chip bg-primary/10 text-primary">
+                      {p.partido ?? "Sem partido"}
+                    </span>
+                    {p.ficha && p.ficha.total > 0 && (
+                      <span
+                        className={`chip ${classesBadgeFicha(p.ficha.indicador)}`}
+                        title="Casos documentados por fontes públicas"
+                      >
+                        {rotuloFicha(p.ficha.indicador, p.ficha.total)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {p.biografia && (

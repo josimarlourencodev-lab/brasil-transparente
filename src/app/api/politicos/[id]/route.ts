@@ -38,5 +38,14 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: erroNoticias.message }, { status: 500 });
   }
 
-  return NextResponse.json({ politico, noticias });
+  const { data: ficha, error: erroFicha } = await supabase()
+    .from("ficha_politico")
+    .select("*")
+    .eq("politico_id", id);
+
+  if (erroFicha) {
+    return NextResponse.json({ error: erroFicha.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ politico, noticias, ficha: ficha ?? [] });
 }
