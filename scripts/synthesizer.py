@@ -72,28 +72,38 @@ def _headers(provider: str) -> dict:
     }
 
 
-def _payload(provider: str, user_prompt: str) -> dict:
+def _payload(provider: str, user_prompt: str, system_prompt: str | None = None,
+             max_tokens: int | None = None, model: str | None = None) -> dict:
     if provider == "gemini":
         return {
             "contents": [
                 {"role": "user", "parts": [{"text": user_prompt}]}
             ]
         }
-    return {
-        "model": _model(provider),
+    body: dict = {
+        "model": _model_with_override(provider, model),
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt or SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
     }
+    if max_tokens is not None:
+        body["max_tokens"] = max_tokens
+    return body
 
 
 def _model(provider: str) -> str:
     return os.environ.get("LLM_MODEL", "").strip() or DEFAULT_MODEL.get(
         provider, DEFAULT_MODEL["groq"]
     )
+
+
+def _model_with_override(provider: str, model: str | None) -> str:
+    if model and model.strip():
+        return model.strip()
+    return _model(provider)
 
 
 def _parse_response(provider: str, resp: dict) -> dict | None:
@@ -263,15 +273,16 @@ def _backoff_seconds(attempt: int, retry_after: float | None) -> float:
     return min(BACKOFF_BASE_SECONDS * (2**attempt), BACKOFF_MAX_SECONDS)
 
 
-def _call(provider: str, user_prompt: str) -> dict | None:
+def _call(provider: str, user_prompt: str, system_prompt: str | None = None,
+          max_tokens: int | None = None, model: str | None = None) -> dict | None:
     if provider == "gemini":
-        url = GEMINI_ENDPOINT.format(model=_model(provider))
+        url = GEMINI_ENDPOINT.format(model=_model_with_override(provider, model))
     else:
         url = BASE_URLS.get(provider)
     if not url:
         return None
     params = {"key": os.environ.get("LLM_API_KEY", "")} if provider == "gemini" else None
-    payload = _payload(provider, user_prompt)
+    payload = _payload(provider, user_prompt, system_prompt, max_tokens, model)
 
     last_status: int | None = None
     attempts = 0

@@ -43,6 +43,22 @@ export function PoliticoCard({
             {politico.biografia}
           </Text>
         ) : null}
+        {politico.ficha && politico.ficha.total > 0 ? (
+          <View style={styles.badgeFicha}>
+            <Text
+              style={[
+                styles.badgeTexto,
+                politico.ficha.indicador === "atencao" && {
+                  color: Cores.acento,
+                },
+              ]}
+            >
+              {politico.ficha.total === 1
+                ? "1 caso documentado"
+                : `${politico.ficha.total} casos documentados`}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -89,5 +105,18 @@ const styles = StyleSheet.create({
     fontSize: Tipografia.detalhe,
     color: Cores.textoSecundario,
     marginTop: 4,
+  },
+  badgeFicha: {
+    backgroundColor: Cores.primariaClara,
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    marginTop: 6,
+  },
+  badgeTexto: {
+    fontSize: Tipografia.pequena,
+    fontWeight: "600",
+    color: Cores.primaria,
   },
 });
