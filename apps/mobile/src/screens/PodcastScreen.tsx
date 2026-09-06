@@ -9,9 +9,9 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { useAudioPlayerStatus } from "expo-audio";
 import { AppHeader } from "../components/Header";
-import { Chip } from "../components/Chip";
+import { audioPlayer } from "../lib/audio";
 import { supabase } from "../lib/supabase";
 import { Bordas, Espacamento, Tipografia, useCores } from "../theme";
 import type { PodcastEpisodio } from "../types";
@@ -42,7 +42,7 @@ export function PodcastScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [reproduzindo, setReproduzindo] = useState<number | null>(null);
 
-  const player = useAudioPlayer(null as unknown as string);
+  const player = audioPlayer;
   const status = useAudioPlayerStatus(player);
 
   async function carregar() {
@@ -62,18 +62,30 @@ export function PodcastScreen() {
     })();
     return () => {
       stale = true;
-      player.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function ativarTelaBloqueio(ep: PodcastEpisodio) {
+    player.setActiveForLockScreen(
+      true,
+      { title: ep.titulo, artist: "Brasil Transparente" },
+      { showSeekBackward: true, showSeekForward: true }
+    );
+  }
+
   function alternar(ep: PodcastEpisodio) {
     if (reproduzindo === ep.id) {
-      player.play();
+      if (status.playing) {
+        player.pause();
+      } else {
+        player.play();
+      }
     } else {
       player.replace({ uri: ep.audio_url });
-      player.play();
       setReproduzindo(ep.id);
+      ativarTelaBloqueio(ep);
+      player.play();
     }
   }
 
