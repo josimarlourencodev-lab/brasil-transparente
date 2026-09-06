@@ -52,7 +52,13 @@ Regras obrigatórias:
 3) Quando o histórico de afirmações passadas for fornecido, compare com a notícia atual \
 e aponte contradições de forma factual: \"em [data] afirmou X; em [data] aprovou Y\", \
 sempre citando as fontes (marcadas como oficial ou oposição).
-4) Produza resposta somente em JSON válido com este esquema:
+4) Só analise notícias com relação comprovável ao monitoramento político brasileiro \
+(gestão pública, corrupção, políticas públicas, eleições, atos de parlamentares e \
+gestores). Ignore e marque como `relevante: false` matérias sobre celebridades, \
+famosos, esportes, futebol, entretenimento, cultura pop, novelas, shows ou qualquer \
+assunto sem ligação direta com o exercício do poder público. Para esses casos, \
+devolva exatamente: {\"relevante\": false} sem preencher os demais campos.
+5) Produza resposta somente em JSON válido com este esquema:
 {
   \"resumo\": \"string até 280 caracteres\",
   \"categoria\": \"Corrupção\" | \"Economia\" | \"Saúde\" | \"Segurança\" | \
@@ -387,6 +393,11 @@ def synthesize_item(item: dict, historico: list[dict] | None = None) -> dict:
 
     if not result:
         item["status_sintese"] = "falha_llm"
+        return item
+
+    item["relevante"] = bool(result.get("relevante", True))
+    if not item["relevante"]:
+        item["status_sintese"] = "fora_do_tema"
         return item
 
     item["resumo"] = (result.get("resumo") or item["titulo"])[:280]
