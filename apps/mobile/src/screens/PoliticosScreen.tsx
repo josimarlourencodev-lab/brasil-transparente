@@ -5,11 +5,12 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AppHeader } from "../components/Header";
 import { PoliticoCard } from "../components/PoliticoCard";
 import { supabase } from "../lib/supabase";
-import { Cores, Espacamento } from "../theme";
+import { Espacamento, useCores } from "../theme";
 import type { Politico } from "../types";
 import type { RootStackParamList } from "../navigation/types";
 
 export function PoliticosScreen() {
+  const c = useCores();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [politicos, setPoliticos] = useState<Politico[]>([]);
@@ -75,12 +76,12 @@ export function PoliticosScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Cores.fundo }}>
+    <View style={{ flex: 1, backgroundColor: c.fundo }}>
       <AppHeader />
       {loading ? (
         <ActivityIndicator
           style={{ marginTop: 40 }}
-          color={Cores.primaria}
+          color={c.primaria}
         />
       ) : (
         <FlatList
@@ -98,7 +99,7 @@ export function PoliticosScreen() {
                 await carregar();
                 setRefreshing(false);
               }}
-              tintColor={Cores.primaria}
+              tintColor={c.primaria}
             />
           }
           renderItem={({ item }) => (
