@@ -21,7 +21,7 @@ const NAV: NavItem[] = [
   { href: "/politicos", label: "Políticos" },
   { href: "/podcast", label: "Podcast" },
   { href: "/documentacao", label: "Documentação" },
-  { href: "/#sobre", label: "Sobre" },
+  { href: "/pitch", label: "O Brasil Transparente" },
 ];
 
 export function SiteHeader() {
