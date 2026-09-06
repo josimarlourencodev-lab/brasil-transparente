@@ -29,7 +29,12 @@
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ3Z3b2Vqa3V0dnRvcWNobW96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMDEwNTUsImV4cCI6MjEwMzg3NzA1NX0.sEUnDqO3pqC37tJNOCgVnjMolBn6yjMp2jo8Mr4JErI"
     },
     "plugins": [
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true
+        }
+      ],
       "expo-image"
     ]
   }
