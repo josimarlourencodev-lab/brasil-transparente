@@ -33,12 +33,19 @@ feeds.json / env RSS_* → crawlers (RSS/Atom, retries)
 
 ## Filtro de relevância (fora do tema)
 
-O `SYSTEM_PROMPT` da síntese manda o LLM marcar como **`relevante: false`** matérias sobre:
+O `SYSTEM_PROMPT` da síntese manda o LLM marcar como **`relevante: false`** matérias de
+lazer/entretenimento sem ligação com o poder público:
 
-- celebridades, famosos, influencers
-- esportes, futebol
-- entretenimento, cultura pop, novelas, shows
-- qualquer assunto sem ligação comprovada com o exercício do poder público
+- **rock in rio** e festivais/shows musicais
+- **futebol** e esportes em geral, campeonatos
+- celebridades, famosos, influencers, novelas, reality shows, cultura pop
+
+São **mantidas** (consideradas dentro do escopo):
+- notícias com relação direta ao monitoramento político brasileiro (gestão pública,
+  corrupção, políticas públicas, eleições, atos de parlamentares e gestores,
+  Congresso, partidos, Justiça política)
+- matérias de **relações internacionais, política externa e geopolítica**, mesmo sem
+  menção direta a políticos brasileiros
 
 Quando `relevante: false`, o item recebe `status_sintese = "fora_do_tema"` e **é ignorado na publicação** (`upsert_items` não o insere). Isso impede que esse conteúdo entre no site sem apagar o que já existe.
 
