@@ -276,6 +276,14 @@ def test_synthesize_relevante_false_marca_fora_do_tema(monkeypatch):
     assert item["status_sintese"] == "fora_do_tema"
 
 
+def test_prompt_rejeita_entretenimento_e_mantem_relacoes_internacionais():
+    prompt = synthesizer.SYSTEM_PROMPT.lower()
+    for bloqueado in ["rock in rio", "futebol", "celebridades", "novelas"]:
+        assert bloqueado in prompt
+    assert "relações internacionais" in prompt
+    assert "geopolítica" in prompt
+
+
 def test_synthesize_sem_campo_relevante_considera_relevante(monkeypatch):
     monkeypatch.setenv("LLM_API_KEY", "teste")
     monkeypatch.setenv("LLM_PROVIDER", "groq")
