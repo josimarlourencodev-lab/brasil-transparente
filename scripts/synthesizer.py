@@ -52,12 +52,15 @@ Regras obrigatórias:
 3) Quando o histórico de afirmações passadas for fornecido, compare com a notícia atual \
 e aponte contradições de forma factual: \"em [data] afirmou X; em [data] aprovou Y\", \
 sempre citando as fontes (marcadas como oficial ou oposição).
-4) Só analise notícias com relação comprovável ao monitoramento político brasileiro \
-(gestão pública, corrupção, políticas públicas, eleições, atos de parlamentares e \
-gestores). Ignore e marque como `relevante: false` matérias sobre celebridades, \
-famosos, esportes, futebol, entretenimento, cultura pop, novelas, shows ou qualquer \
-assunto sem ligação direta com o exercício do poder público. Para esses casos, \
-devolva exatamente: {\"relevante\": false} sem preencher os demais campos.
+4) Relevância: mantenha notícias com relação direta ao monitoramento político \
+brasileiro (gestão pública, corrupção, políticas públicas, eleições, atos de \
+parlamentares e gestores, Congresso, partidos e Justiça política). Também mantenha \
+matérias de relações internacionais, política externa e geopolítica, mesmo sem menção \
+direta a políticos brasileiros. Marque sempre como `relevante: false` — devolvendo \
+exatamente {\"relevante\": false} sem preencher os demais campos — quando o assunto \
+for lazer/entretenimento sem ligação com o poder público: rock in rio, festivais e \
+shows musicais, futebol e esportes em geral, campeonatos, celebridades, famosos, \
+novelas, reality shows e cultura pop.
 5) Produza resposta somente em JSON válido com este esquema:
 {
   \"resumo\": \"string até 280 caracteres\",
