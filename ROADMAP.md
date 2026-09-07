@@ -25,7 +25,15 @@ contexto e contradições a partir de fontes oficiais e de oposição.
 - [x] 4×/dia de ingestão autônoma (feeds + busca dirigida por candidato).
 - [x] Síntese neutra por IA com correlação a histórico e classificação de fonte.
 - [x] Restrição de tema no prompt: celebridades, esportes, futebol, novelas e shows
-      são marcados `relevante: false` e não são publicados.
+      são marcados `relevante: false` e não são publicados (rock in rio e futebol
+      bloqueados; relações internacionais/geopolítica são mantidas).
+- [x] **SEO massivo**: SSR das páginas de notícia, político, listas e podcast
+      (conteúdo já no HTML, sem "Carregando"); `generateMetadata` com título/
+      descrição/OG/Twitter/canonical por página; `sitemap.xml` estático + dinâmico;
+      `robots.txt`; `rss.xml`; `opengraph-image` (OG padrão 1200×630); JSON-LD
+      (`Organization`/`WebSite`/`SearchAction` na home, `NewsArticle` +
+      `BreadcrumbList` na notícia, `Person` + `BreadcrumbList` no político,
+      `ItemList` nas listas, `PodcastSeries` no podcast).
 - [x] Associação de notícias ao perfil do político (`politico_id`) via termos normalizados.
 - [x] API pública (`/api/noticias`, `/api/politicos`, `/api/podcast/episodios`), busca
       `?q=`, RLS público.
