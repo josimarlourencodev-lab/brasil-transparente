@@ -12,6 +12,12 @@ Registro detalhado do que foi construído até agora, área por área.
 - **Página `/documentacao`** — documentação interna no mesmo Design System (sobre, funcionamento autônomo, metodologia, princípios/código de conduta e acessos), sem sair do portal.
 - **Navegação** — "GitHub" (nova aba) e "Documentação" no header; "O Brasil Transparente" (pitch), "Documentação" e "Repositório GitHub" no rodapé.
 - **PWA** — manifest e service worker (offline básico).
+- **SEO massivo** — conteúdo das páginas de notícia/político/listas/podcast renderizado
+  no servidor (SSR, sem "Carregando…"); `generateMetadata` por página (title, description,
+  OG, Twitter, canonical); `sitemap.xml` (estático + notícias/políticos); `robots.txt`;
+  feed `rss.xml`; imagem OG padrão (`/opengraph-image`, 1200×630); JSON-LD
+  (Organization/WebSite na home, NewsArticle + BreadcrumbList na notícia, Person +
+  BreadcrumbList no político, ItemList nas listas, PodcastSeries no podcast).
 - **Correções** ao longo do tempo: dark mode, layout responsivo, remoção do link "Painel do auditor" do rodapé.
 
 ## Mobile (Expo / React Native — `apps/mobile`)
