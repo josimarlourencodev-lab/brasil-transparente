@@ -1,8 +1,12 @@
-"use client";
-
+import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
-import { Suspense, useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { JsonLd } from "@/components/json-ld";
+import { SITE_NAME, SITE_URL, absoluto } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
 
 type Politico = {
   id: number;
@@ -27,49 +31,125 @@ type Noticia = {
   politico: Politico | null;
 };
 
-const FALHA_LOADING = (
-  <main className="container-page py-12">
-    <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
-  </main>
-);
+const buscarNoticia = cache(async (id: number): Promise<Noticia | null> => {
+  const { data } = await supabase()
+    .from("noticias")
+    .select(
+      "id, titulo, url, url_fonte, resumo, categoria, tipo_fonte, publicado_em, coletado_em, imagem_url, contradicao_detectada, contradicao_descricao, politico:politicos(id, nome, partido, foto_url)"
+    )
+    .eq("id", id)
+    .eq("status", "publicado")
+    .single();
 
-export function NoticiaContent({ id }: { id: number }) {
-  const [noticia, setNoticia] = useState<Noticia | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  return (data as unknown as Noticia | undefined) ?? null;
+});
 
-  useEffect(() => {
-    let active = true;
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
-    fetch(`/api/noticias/${id}`)
-      .then((r) => {
-        if (r.status === 404) throw new Error("noticia-inexistente");
-        if (!r.ok) throw new Error("Falha ao carregar a notícia.");
-        return r.json();
-      })
-      .then((data: Noticia) => {
-        if (active) setNoticia(data);
-      })
-      .catch((e: unknown) => {
-        if (active) setErro(e instanceof Error ? e.message : String(e));
-      });
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) return {};
 
-    return () => {
-      active = false;
-    };
-  }, [id]);
-
-  if (erro === "noticia-inexistente") notFound();
-
+  const noticia = await buscarNoticia(id);
   if (!noticia) {
-    return (
-      <main className="container-page py-12">
-        <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
-      </main>
-    );
+    return { title: "Notícia não encontrada", robots: { index: false } };
   }
+
+  const descricao = noticia.resumo?.slice(0, 160) ?? noticia.titulo;
+  const imagemAbsoluta = noticia.imagem_url
+    ? absoluto(noticia.imagem_url)
+    : `${SITE_URL}/opengraph-image`;
+
+  return {
+    title: noticia.titulo,
+    description: descricao,
+    alternates: { canonical: `/noticias/${id}` },
+    openGraph: {
+      type: "article",
+      url: absoluto(`/noticias/${id}`),
+      title: noticia.titulo,
+      description: descricao,
+      publishedTime: noticia.publicado_em ?? undefined,
+      modifiedTime: noticia.coletado_em ?? noticia.publicado_em ?? undefined,
+      authors: noticia.politico ? [noticia.politico.nome] : [],
+      section: noticia.categoria,
+      images: [{ url: imagemAbsoluta }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: noticia.titulo,
+      description: descricao,
+      images: [imagemAbsoluta],
+    },
+  };
+}
+
+function formatarData(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export default async function NoticiaDetailPage({ params }: Props) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) notFound();
+
+  const noticia = await buscarNoticia(id);
+  if (!noticia) notFound();
+
+  const urlPagina = absoluto(`/noticias/${id}`);
+  const pesquisa = absoluto(`/noticias?q=${encodeURIComponent(noticia.titulo)}`);
 
   return (
     <div className="min-h-screen">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "NewsArticle",
+              mainEntityOfPage: { "@type": "WebPage", "@id": urlPagina },
+              headline: noticia.titulo,
+              description: noticia.resumo ?? undefined,
+              image: noticia.imagem_url ? absoluto(noticia.imagem_url) : `${SITE_URL}/opengraph-image`,
+              datePublished: noticia.publicado_em ?? undefined,
+              dateModified: noticia.coletado_em ?? noticia.publicado_em ?? undefined,
+              author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+              publisher: { "@id": `${SITE_URL}/#organizacao` },
+              isAccessibleForFree: true,
+              articleSection: noticia.categoria,
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+                { "@type": "ListItem", position: 2, name: "Notícias", item: `${SITE_URL}/noticias` },
+                { "@type": "ListItem", position: 3, name: noticia.titulo, item: urlPagina },
+              ],
+            },
+            {
+              "@type": "WebPage",
+              "@id": urlPagina,
+              url: urlPagina,
+              isPartOf: { "@id": `${SITE_URL}/#site` },
+              about: noticia.politico ? noticia.politico.nome : noticia.categoria,
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: pesquisa,
+                },
+              },
+            },
+          ],
+        }}
+      />
       <main className="container-page py-12">
         <Link
           href="/noticias"
@@ -94,13 +174,8 @@ export function NoticiaContent({ id }: { id: number }) {
             </span>
             <span>{noticia.tipo_fonte}</span>
             {noticia.publicado_em && (
-              <time dateTime={noticia.publicado_em}>
-                Publicado em{" "}
-                {new Date(noticia.publicado_em).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })}
+              <time dateTime={noticia.publicado_em} itemProp="datePublished">
+                Publicado em {formatarData(noticia.publicado_em)}
               </time>
             )}
           </div>
@@ -193,22 +268,5 @@ export function NoticiaContent({ id }: { id: number }) {
         </article>
       </main>
     </div>
-  );
-}
-
-type Props = {
-  params: Promise<{ id: string }>;
-};
-
-export default function NoticiaDetailPage({ params }: Props) {
-  const { id: rawId } = use(params);
-  const id = Number(rawId);
-
-  if (!Number.isInteger(id) || id <= 0) notFound();
-
-  return (
-    <Suspense fallback={FALHA_LOADING}>
-      <NoticiaContent id={id} />
-    </Suspense>
   );
 }

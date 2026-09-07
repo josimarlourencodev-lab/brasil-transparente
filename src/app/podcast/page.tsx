@@ -1,9 +1,19 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
 import HeadphonesIcon from "@mui/icons-material/Headphones";
 import GraphicEqIcon from "@mui/icons-material/GraphicEq";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import { supabase } from "@/lib/supabase";
+import { JsonLd } from "@/components/json-ld";
+import { absoluto, SITE_NAME, SITE_URL } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Podcast — Síntese semanal em áudio",
+  description:
+    "Episódios semanais com os destaques monitorados pelo Brasil Transparente, narrados de forma neutra e com referência às fontes.",
+  alternates: { canonical: "/podcast" },
+};
 
 type Episodio = {
   id: number;
@@ -30,24 +40,39 @@ function formatarData(iso: string): string {
   });
 }
 
-export default function PodcastPage() {
-  const [episodios, setEpisodios] = useState<Episodio[]>([]);
-  const [erro, setErro] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
+export default async function PodcastPage() {
+  const { data } = await supabase()
+    .from("podcast_episodios")
+    .select("id, titulo, descricao, audio_url, thumb_url, duracao_seg, publicado_em")
+    .order("publicado_em", { ascending: false })
+    .limit(30);
 
-  useEffect(() => {
-    fetch("/api/podcast/episodios")
-      .then((r) => {
-        if (!r.ok) throw new Error("Falha ao carregar os episódios do podcast.");
-        return r.json();
-      })
-      .then(setEpisodios)
-      .catch((e: unknown) => setErro(e instanceof Error ? e.message : String(e)))
-      .finally(() => setCarregando(false));
-  }, []);
+  const episodios = (data as Episodio[]) ?? [];
 
   return (
     <div className="min-h-screen">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "PodcastSeries",
+          name: "Podcast Brasil Transparente",
+          url: absoluto("/podcast"),
+          description:
+            "Episódios semanais com os destaques monitorados pelo Brasil Transparente, narrados de forma neutra e com referência às fontes.",
+          author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+          episode: episodios.map((ep) => ({
+            "@type": "PodcastEpisode",
+            name: ep.titulo,
+            description: ep.descricao ?? undefined,
+            datePublished: ep.publicado_em,
+            url: absoluto("/podcast"),
+            associatedMedia: {
+              "@type": "AudioObject",
+              contentUrl: ep.audio_url,
+            },
+          })),
+        }}
+      />
       <section className="relative overflow-hidden bg-primary dark:bg-neutral-night">
         <div
           aria-hidden
@@ -80,19 +105,7 @@ export default function PodcastPage() {
       </section>
 
       <main className="container-page py-12">
-        {erro && (
-          <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-            {erro}
-          </p>
-        )}
-
-        {carregando && (
-          <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">
-            Carregando episódios…
-          </p>
-        )}
-
-        {!carregando && !erro && episodios.length > 0 && (
+        {episodios.length > 0 && (
           <div className="space-y-5">
             {episodios.map((ep, index) => (
               <article
@@ -109,48 +122,48 @@ export default function PodcastPage() {
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-start gap-4">
-                      <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-display text-lg font-semibold text-primary dark:bg-primary/20 dark:text-primary-light sm:flex">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <div>
-                        <h2 className="text-lg font-semibold text-primary dark:text-primary-light sm:text-xl">
-                          {ep.titulo}
-                        </h2>
-                        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-dark/70 dark:text-neutral-300">
-                          <span className="inline-flex items-center gap-1">
-                            <CalendarTodayIcon className="h-3.5 w-3.5" />
-                            {formatarData(ep.publicado_em)}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <GraphicEqIcon className="h-3.5 w-3.5" />
-                            {formatarDuracao(ep.duracao_seg)}
-                          </span>
-                        </p>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-start gap-4">
+                        <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-display text-lg font-semibold text-primary dark:bg-primary/20 dark:text-primary-light sm:flex">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <div>
+                          <h2 className="text-lg font-semibold text-primary dark:text-primary-light sm:text-xl">
+                            {ep.titulo}
+                          </h2>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-dark/70 dark:text-neutral-300">
+                            <span className="inline-flex items-center gap-1">
+                              <CalendarTodayIcon className="h-3.5 w-3.5" />
+                              {formatarData(ep.publicado_em)}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <GraphicEqIcon className="h-3.5 w-3.5" />
+                              {formatarDuracao(ep.duracao_seg)}
+                            </span>
+                          </p>
+                        </div>
                       </div>
+                      {index === 0 && (
+                        <span className="chip bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent-light">
+                          Mais recente
+                        </span>
+                      )}
                     </div>
-                    {index === 0 && (
-                      <span className="chip bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent-light">
-                        Mais recente
-                      </span>
+
+                    {ep.descricao && (
+                      <p className="text-sm leading-relaxed text-neutral-dark/70 dark:text-neutral-300">
+                        {ep.descricao}
+                      </p>
                     )}
-                  </div>
 
-                  {ep.descricao && (
-                    <p className="text-sm leading-relaxed text-neutral-dark/70 dark:text-neutral-300">
-                      {ep.descricao}
-                    </p>
-                  )}
-
-                  <audio
-                    controls
-                    preload="none"
-                    src={ep.audio_url}
-                    className="mt-1 w-full dark:[color-scheme:dark]"
-                  >
-                    Seu navegador não suporta o player de áudio.
-                  </audio>
+                    <audio
+                      controls
+                      preload="none"
+                      src={ep.audio_url}
+                      className="mt-1 w-full dark:[color-scheme:dark]"
+                    >
+                      Seu navegador não suporta o player de áudio.
+                    </audio>
                   </div>
                 </div>
               </article>
@@ -158,7 +171,7 @@ export default function PodcastPage() {
           </div>
         )}
 
-        {!erro && !carregando && episodios.length === 0 && (
+        {episodios.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-20 text-center dark:border-white/15 dark:bg-neutral-panel">
             <HeadphonesIcon className="h-12 w-12 text-neutral-dark/30 dark:text-neutral-500" />
             <p className="mt-4 text-neutral-dark/60 dark:text-neutral-400">
