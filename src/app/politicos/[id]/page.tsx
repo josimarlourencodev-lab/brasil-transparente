@@ -1,13 +1,17 @@
-"use client";
-
+import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
-import { Suspense, useEffect, useState, use } from "react";
 import { notFound } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { JsonLd } from "@/components/json-ld";
 import {
   rotuloStatusCaso,
   rotuloTipoCaso,
   type CasoFicha,
 } from "@/lib/ficha";
+import { SITE_URL, absoluto } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
 
 type Politico = {
   id: number;
@@ -38,59 +42,130 @@ type Perfil = {
   ficha: CasoFicha[];
 };
 
-const FALHA_LOADING = (
-  <main className="container-page py-12">
-    <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
-  </main>
-);
+const buscarPerfil = cache(async (id: number): Promise<Perfil | null> => {
+  const { data: politico } = await supabase()
+    .from("politicos")
+    .select("id, nome, partido, cargo, biografia, foto_url, termos_busca, criado_em, atualizado_em")
+    .eq("ativo", true)
+    .eq("id", id)
+    .single();
+
+  if (!politico) return null;
+
+  const [{ data: noticias }, { data: ficha }] = await Promise.all([
+    supabase()
+      .from("noticias")
+      .select("id, titulo, url, resumo, categoria, tipo_fonte, publicado_em, imagem_url")
+      .eq("status", "publicado")
+      .or(
+        `politico_id.eq.${id},titulo.ilike.%${politico.nome}%,resumo.ilike.%${politico.nome}%`
+      )
+      .order("publicado_em", { ascending: false })
+      .limit(50),
+    supabase().from("ficha_politico").select("*").eq("politico_id", id),
+  ]);
+
+  return {
+    politico,
+    noticias: (noticias as Noticia[]) ?? [],
+    ficha: (ficha as CasoFicha[]) ?? [],
+  };
+});
+
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) return {};
+
+  const perfil = await buscarPerfil(id);
+  if (!perfil) {
+    return { title: "Político não encontrado", robots: { index: false } };
+  }
+
+  const { politico } = perfil;
+  const descricao =
+    politico.biografia ??
+    `Histórico, casos documentados e notícias sobre ${politico.nome}.`;
+  const imagemAbsoluta = politico.foto_url
+    ? absoluto(politico.foto_url)
+    : `${SITE_URL}/opengraph-image`;
+
+  return {
+    title: politico.nome,
+    description: descricao.slice(0, 160),
+    alternates: { canonical: `/politicos/${id}` },
+    keywords: politico.termos_busca ?? [],
+    openGraph: {
+      type: "profile",
+      url: absoluto(`/politicos/${id}`),
+      title: `${politico.nome} — ${politico.partido ?? "política brasileira"}`,
+      description: descricao.slice(0, 160),
+      images: [{ url: imagemAbsoluta }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: politico.nome,
+      description: descricao.slice(0, 160),
+      images: [imagemAbsoluta],
+    },
+  };
+}
 
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/).filter(Boolean);
-  return partes
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "?";
+  return (
+    partes
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
 }
 
-export function PerfilContent({ id }: { id: number }) {
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+export default async function PoliticoDetailPage({ params }: Props) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) notFound();
 
-  useEffect(() => {
-    let active = true;
-
-    fetch(`/api/politicos/${id}`)
-      .then((r) => {
-        if (r.status === 404) throw new Error("politico-inexistente");
-        if (!r.ok) throw new Error("Falha ao carregar o perfil.");
-        return r.json();
-      })
-      .then((data: Perfil) => {
-        if (active) setPerfil(data);
-      })
-      .catch((e: unknown) => {
-        if (active) setErro(e instanceof Error ? e.message : String(e));
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [id]);
-
-  if (erro === "politico-inexistente") notFound();
-
-  if (!perfil) {
-    return (
-      <main className="container-page py-12">
-        <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">Carregando…</p>
-      </main>
-    );
-  }
+  const perfil = await buscarPerfil(id);
+  if (!perfil) notFound();
 
   const { politico, noticias, ficha } = perfil;
+  const urlPagina = absoluto(`/politicos/${id}`);
 
   return (
     <div className="min-h-screen">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Person",
+              "@id": urlPagina,
+              name: politico.nome,
+              url: urlPagina,
+              image: politico.foto_url ? absoluto(politico.foto_url) : undefined,
+              description: politico.biografia ?? undefined,
+              jobTitle: politico.cargo ?? undefined,
+              affiliation: politico.partido
+                ? { "@type": "Organization", name: politico.partido }
+                : undefined,
+              knowsAbout: politico.termos_busca ?? undefined,
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+                { "@type": "ListItem", position: 2, name: "Políticos", item: `${SITE_URL}/politicos` },
+                { "@type": "ListItem", position: 3, name: politico.nome, item: urlPagina },
+              ],
+            },
+          ],
+        }}
+      />
       <main className="container-page py-12">
         <Link
           href="/politicos"
@@ -267,22 +342,5 @@ export function PerfilContent({ id }: { id: number }) {
         </div>
       </main>
     </div>
-  );
-}
-
-type Props = {
-  params: Promise<{ id: string }>;
-};
-
-export default function PoliticoDetailPage({ params }: Props) {
-  const { id: rawId } = use(params);
-  const id = Number(rawId);
-
-  if (!Number.isInteger(id) || id <= 0) notFound();
-
-  return (
-    <Suspense fallback={FALHA_LOADING}>
-      <PerfilContent id={id} />
-    </Suspense>
   );
 }

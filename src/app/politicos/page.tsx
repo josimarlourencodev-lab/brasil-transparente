@@ -1,8 +1,22 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { IndicadorFicha } from "@/lib/ficha";
+import { supabase } from "@/lib/supabase";
+import { JsonLd } from "@/components/json-ld";
+import {
+  resumirFicha,
+  type CasoFicha,
+  type IndicadorFicha,
+} from "@/lib/ficha";
+import { SITE_URL, absoluto } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Políticos monitorados",
+  description:
+    "Histórico contextualizado de políticos brasileiros: casos, contradições e posições documentados ao longo do tempo com fontes públicas e de imprensa.",
+  alternates: { canonical: "/politicos" },
+};
 
 type Politico = {
   id: number;
@@ -12,10 +26,10 @@ type Politico = {
   biografia: string | null;
   foto_url: string | null;
   termos_busca: string[] | null;
-  ficha?: {
-    total: number;
-    indicador: IndicadorFicha;
-  };
+};
+
+type PoliticoComFicha = Politico & {
+  ficha?: { total: number; indicador: IndicadorFicha };
 };
 
 function rotuloFicha(indicador: IndicadorFicha, total: number): string {
@@ -37,28 +51,68 @@ function classesBadgeFicha(indicador: IndicadorFicha): string {
 
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/).filter(Boolean);
-  return partes
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "?";
+  return (
+    partes
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
 }
 
-export default function PoliticosPage() {
-  const [politicos, setPoliticos] = useState<Politico[]>([]);
-  const [erro, setErro] = useState<string | null>(null);
+export default async function PoliticosPage() {
+  const { data } = await supabase()
+    .from("politicos")
+    .select("id, nome, partido, cargo, biografia, foto_url, termos_busca, criado_em")
+    .eq("ativo", true)
+    .order("nome", { ascending: true });
 
-  useEffect(() => {
-    fetch("/api/politicos")
-      .then((r) => {
-        if (!r.ok) throw new Error("Falha ao carregar políticos.");
-        return r.json();
-      })
-      .then(setPoliticos)
-      .catch((e: unknown) => setErro(e instanceof Error ? e.message : String(e)));
-  }, []);
+  const politicosBase = (data as Politico[]) ?? [];
+  let politicos: PoliticoComFicha[] = politicosBase;
+
+  if (politicosBase.length > 0) {
+    const ids = politicosBase.map((p) => p.id);
+    const { data: casos } = await supabase()
+      .from("ficha_politico")
+      .select("*")
+      .in("politico_id", ids);
+
+    const fichas = new Map<number, CasoFicha[]>();
+    for (const caso of (casos ?? []) as CasoFicha[]) {
+      if (!fichas.has(caso.politico_id)) fichas.set(caso.politico_id, []);
+      fichas.get(caso.politico_id)!.push(caso);
+    }
+
+    politicos = politicosBase.map((p) => ({
+      ...p,
+      ficha: resumirFicha(fichas.get(p.id) ?? []),
+    }));
+  }
 
   return (
     <div className="min-h-screen">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          url: absoluto("/politicos"),
+          itemListElement: politicos.map((p, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            item: {
+              "@type": "Person",
+              name: p.nome,
+              url: absoluto(`/politicos/${p.id}`),
+              image: p.foto_url
+                ? absoluto(p.foto_url)
+                : `${SITE_URL}/opengraph-image`,
+              jobTitle: p.cargo ?? undefined,
+              affiliation: p.partido
+                ? { "@type": "Organization", name: p.partido }
+                : undefined,
+            },
+          })),
+        }}
+      />
       <main className="container-page py-12">
         <h1 className="font-display text-3xl font-bold tracking-tight text-primary dark:text-primary-light">
           Políticos monitorados
@@ -67,12 +121,6 @@ export default function PoliticosPage() {
           Histórico contextualizado com casos, contradições e posições documentados ao
           longo do tempo.
         </p>
-
-        {erro && (
-          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-            {erro}
-          </p>
-        )}
 
         <div className="mt-8 grid gap-5 md:grid-cols-2">
           {politicos.map((p) => (
@@ -103,7 +151,7 @@ export default function PoliticosPage() {
                       </p>
                     </div>
                   </div>
-<div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-col items-end gap-2">
                     <span className="chip bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
                       {p.partido ?? "Sem partido"}
                     </span>
@@ -149,7 +197,7 @@ export default function PoliticosPage() {
           ))}
         </div>
 
-        {!erro && politicos.length === 0 && (
+        {politicos.length === 0 && (
           <div className="mt-8 flex items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-16 dark:border-white/15 dark:bg-neutral-panel">
             <p className="text-neutral-dark/60 dark:text-neutral-400">
               Nenhum político ativo no momento.
