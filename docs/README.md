@@ -1,5 +1,7 @@
 # Brasil Transparente — Documentação
 
+> 🇬🇧 **English version:** [docs/en/](en/README.md)
+
 Portal autônomo, neutro e independente de **monitoramento político do Brasil**: histórico, contexto e contradições de políticos a partir de fontes oficiais e de oposição.
 
 Esta documentação cobre o projeto **como um todo até agora**: web, mobile, ingestão, síntese por IA, podcast, banco de dados, deploy e operação.
