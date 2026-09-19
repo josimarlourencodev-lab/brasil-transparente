@@ -1,0 +1,23 @@
+- [Home](/en/)
+- **History**
+  - [What has been done](guia-rapido.md)
+  - [Deliveries by area](entregas.md)
+  - [Releases](releases.md)
+- **Architecture**
+  - [Overview](arquitetura.md)
+  - [Database](banco-de-dados.md)
+  - [Ingestion](ingestao.md)
+  - [AI synthesis](sintese.md)
+  - [Podcast](podcast.md)
+  - [Mobile](mobile.md)
+- **Development**
+  - [Getting started](comecando.md)
+  - [Workflow (git)](fluxo-de-trabalho.md)
+  - [Tests and CI](testes-ci.md)
+- **Operations**
+  - [Deploy and publishing](deploy.md)
+  - [Security](seguranca.md)
+- **Usage**
+  - [Portal](uso-portal.md)
+  - [/admin panel](uso-admin.md)
+  - [Mobile app](uso-mobile.md)
