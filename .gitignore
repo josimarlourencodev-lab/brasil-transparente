@@ -27,6 +27,9 @@ npm-shrinkwrap.json
 # Python
 __pycache__/
 *.py[cod]
+
+# Orçamento diário de tokens da Groq (dados locais, nunca commitar)
+.llm_budget.json
 .venv/
 venv/
 .pytest_cache/
