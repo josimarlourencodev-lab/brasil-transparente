@@ -9,6 +9,12 @@ import synthesizer
 from synthesizer import build_user_prompt, synthesize_item, _parse_response
 from synthesizer import _retry_after_seconds, _call, _parse_interval
 from synthesizer import _reset_rate_state, _update_rate_state
+from synthesizer import (
+    llm_usage_24h,
+    llm_budget_remaining,
+    record_llm_usage,
+    DAILY_BUDGET_TOKENS,
+)
 
 
 class FakePost:
@@ -300,3 +306,76 @@ def test_synthesize_sem_campo_relevante_considera_relevante(monkeypatch):
     item = synthesize_item({"titulo": "Votação", "url": "https://x.com/2"})
     assert item["relevante"] is True
     assert item["status_sintese"] == "ok"
+
+
+def test_budget_registra_e_consome(monkeypatch, tmp_path):
+    monkeypatch.setenv("LLM_BUDGET_FILE", str(tmp_path / "budget.json"))
+    record_llm_usage(1200)
+    assert llm_usage_24h() == 1200
+    assert llm_budget_remaining() == DAILY_BUDGET_TOKENS - 1200
+
+
+def test_synthesize_cota_esgotada_nao_chama_llm(monkeypatch, tmp_path):
+    monkeypatch.setenv("LLM_API_KEY", "teste")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    monkeypatch.setenv("LLM_BUDGET_FILE", str(tmp_path / "budget.json"))
+    monkeypatch.setattr(synthesizer, "DAILY_BUDGET_TOKENS", 100)
+    record_llm_usage(90)  # resta 10 < estimativa de 1500/chamada
+
+    calls = []
+
+    class Never:
+        def __call__(self, *a, **k):
+            calls.append(a)
+            raise AssertionError("não deveria chamar a API")
+
+    monkeypatch.setattr("synthesizer.requests.post", Never())
+    item = synthesize_item({"titulo": "X", "url": "https://x.com/b"})
+    assert item["status_sintese"] == "limite_diario"
+    assert calls == []
+
+
+def test_call_track_budget_registra_usage(monkeypatch, tmp_path):
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("LLM_BUDGET_FILE", str(tmp_path / "budget.json"))
+    payload = json.dumps({"categoria": "Saúde"})
+    resp = {
+        "choices": [{"message": {"content": payload}}],
+        "usage": {"total_tokens": 333},
+    }
+    fake = FakePost(FakePost.Resp(resp))
+    monkeypatch.setattr("synthesizer.requests.post", fake)
+
+    out = _call("groq", "prompt", track_budget=True)
+    assert out == {"categoria": "Saúde"}
+    assert llm_usage_24h() == 333
+
+
+def test_call_429_cota_zerada_com_reset_longo_desiste(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+    monkeypatch.setenv("LLM_API_KEY", "k")
+    monkeypatch.setenv("LLM_PROVIDER", "groq")
+    monkeypatch.setenv("LLM_MODEL", "m")
+    monkeypatch.setenv("LLM_BUDGET_FILE", str(tmp_path / "budget.json"))
+    _reset_rate_state()
+
+    def quota_429(*a, **k):
+        return FakePost.Resp(
+            None,
+            status=429,
+            headers={
+                "Retry-After": "5",
+                "x-ratelimit-remaining-tokens": "0",
+                "x-ratelimit-reset-tokens": "6h0m",
+            },
+        )
+
+    fake = MagicMock(side_effect=quota_429)
+    monkeypatch.setattr("synthesizer.requests.post", fake)
+
+    out = _call("groq", "prompt")
+    assert out is None
+    assert fake.call_count == 1  # sem retries inúteis com cota zerada
+    _reset_rate_state()

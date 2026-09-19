@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from pathlib import Path
 
 import requests
 
@@ -143,6 +144,13 @@ MAX_SLEEP_ON_429 = 120
 TOKENS_ESTIMATIVA_POR_CHAMADA = 1500
 RATE_RESET_MAX_ESPERA = 120
 
+# Orçamento diário de tokens (limite real: 200.000 TPD no tier gratuito da Groq,
+# em openai/gpt-oss-20b). Manteremos uma margem de segurança para não esgotar a
+# cota e passar o resto do dia batendo em 429.
+DAILY_BUDGET_TOKENS = int(os.environ.get("LLM_DAILY_BUDGET", "180000"))
+BUDGET_WINDOW_HOURS = 24
+SYNTHESIS_MAX_OUTPUT_TOKENS = 1024
+
 _RATE_LIMIT_STATE: dict[str, float | None] = {
     "remaining_requests": None,
     "remaining_tokens": None,
@@ -251,6 +259,50 @@ def _reset_rate_state() -> None:
         _RATE_LIMIT_STATE[key] = None
 
 
+def _budget_path() -> Path:
+    """Arquivo persistente com o consumo de tokens (janela móvel de 24h)."""
+    custom = os.environ.get("LLM_BUDGET_FILE", "").strip()
+    if custom:
+        return Path(custom)
+    return Path(__file__).resolve().parent.parent / ".llm_budget.json"
+
+
+def _load_budget_entries(now: float | None = None) -> list[dict]:
+    now = now if now is not None else time.time()
+    try:
+        data = json.loads(_budget_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        data = []
+    if not isinstance(data, list):
+        return []
+    cutoff = now - BUDGET_WINDOW_HOURS * 3600
+    return [e for e in data if isinstance(e, dict) and e.get("t", 0) >= cutoff]
+
+
+def llm_usage_24h() -> int:
+    """Total de tokens consumidos na janela móvel de 24h (entradas válidas)."""
+    try:
+        return sum(int(e.get("n", 0)) for e in _load_budget_entries())
+    except (TypeError, ValueError):
+        return 0
+
+
+def llm_budget_remaining() -> int:
+    """Tokens ainda disponíveis no orçamento diário (margem segura)."""
+    return max(0, DAILY_BUDGET_TOKENS - llm_usage_24h())
+
+
+def record_llm_usage(tokens: int) -> None:
+    """Acumula o consumo real (usage.total_tokens) no orçamento persistido."""
+    if not tokens or tokens <= 0:
+        return
+    entries = _load_budget_entries()
+    entries.append({"t": time.time(), "n": int(tokens)})
+    path = _budget_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(entries), encoding="utf-8")
+
+
 def _wait_if_rate_limited() -> None:
     """Espera proativamente quando a janela de tokens/requests está prestes a
     zerar, evitando bater no 429. Não dorme para janelas longas (RPD em horas)."""
@@ -283,7 +335,8 @@ def _backoff_seconds(attempt: int, retry_after: float | None) -> float:
 
 
 def _call(provider: str, user_prompt: str, system_prompt: str | None = None,
-          max_tokens: int | None = None, model: str | None = None) -> dict | None:
+          max_tokens: int | None = None, model: str | None = None,
+          track_budget: bool = False) -> dict | None:
     if provider == "gemini":
         url = GEMINI_ENDPOINT.format(model=_model_with_override(provider, model))
     else:
@@ -327,6 +380,14 @@ def _call(provider: str, user_prompt: str, system_prompt: str | None = None,
                     f"desistindo nesta execução"
                 )
                 break
+            # Cota diária visivelmente zerada pelos headers? Não vale a pena retentar.
+            remaining = _RATE_LIMIT_STATE.get("remaining_tokens")
+            reset = _RATE_LIMIT_STATE.get("reset_tokens_seconds")
+            if remaining is not None and remaining <= 0 and (
+                reset is None or reset > MAX_SLEEP_ON_429
+            ):
+                print("[llm] cota de tokens zerada e reset distante — desistindo")
+                break
             if retry_after:
                 print(f"[llm] rate limit — aguardando {retry_after:.0f}s (tentativa {attempts + 1})")
             else:
@@ -343,6 +404,11 @@ def _call(provider: str, user_prompt: str, system_prompt: str | None = None,
                     break
                 time.sleep(_backoff_seconds(attempts - 1, None))
                 continue
+            if track_budget:
+                usage = data.get("usage") or {}
+                total = usage.get("total_tokens") or 0
+                if total:
+                    record_llm_usage(total)
             parsed = _parse_response(provider, data)
             if parsed is not None:
                 return parsed
@@ -388,9 +454,19 @@ def synthesize_item(item: dict, historico: list[dict] | None = None) -> dict:
         item["status_sintese"] = "sem_chave_llm"
         return item
 
+    # Cota diária de tokens já próxima do limite? Interrompe sem desperdiçar chamadas.
+    if llm_budget_remaining() < TOKENS_ESTIMATIVA_POR_CHAMADA:
+        item["status_sintese"] = "limite_diario"
+        return item
+
     result = None
     try:
-        result = _call(provider, build_user_prompt(item, historico))
+        result = _call(
+            provider,
+            build_user_prompt(item, historico),
+            max_tokens=SYNTHESIS_MAX_OUTPUT_TOKENS,
+            track_budget=True,
+        )
     except requests.RequestException:
         result = None
 
