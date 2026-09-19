@@ -2,6 +2,8 @@
 
 Portal autônomo, neutro e independente de monitoramento de notícias e histórico de políticos atuais do Brasil.
 
+> 🇬🇧 **English version:** [README.en.md](README.en.md)
+
 > 📚 **Documentação completa**: <https://josimarlourencodev-lab.github.io/brasil-transparente> — histórico, arquitetura, banco, ingestão, podcast, mobile, deploy, segurança e uso.
 
 ## Visão Geral
