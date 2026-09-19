@@ -239,6 +239,11 @@ def main(argv=None) -> int:
                     historico = historico_de(client, pid) if client else []
             if item.get("status_sintese") != "ok":
                 synthesize_item(item, historico)
+                if item.get("status_sintese") == "limite_diario":
+                    print("[throttle] cota diária de tokens esgotada — síntese interrompida.")
+                    remaining = len(ordered_cleaned) - (synthesized + 1)
+                    print(f"[throttle] {remaining} itens restantes ficarão sem síntese nesta execução.")
+                    break
                 synthesized += 1
                 if synthesized % 10 == 0:
                     print(f"[throttle] {synthesized} sínteses feitas — pausa 5s para respeitar rate limit...")
