@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -260,11 +261,75 @@ def _reset_rate_state() -> None:
 
 
 def _budget_path() -> Path:
-    """Arquivo persistente com o consumo de tokens (janela móvel de 24h)."""
+    """Arquivo persistente com o consumo de tokens (janela móvel de 24h).
+
+    Usado como fallback quando o Supabase não está configurado (dev/testes).
+    """
     custom = os.environ.get("LLM_BUDGET_FILE", "").strip()
     if custom:
         return Path(custom)
     return Path(__file__).resolve().parent.parent / ".llm_budget.json"
+
+
+def _supabase_env() -> tuple[str, str] | None:
+    """URL/credenciais do Supabase (REST/PostgREST), se disponíveis."""
+    url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if url and key:
+        return url, key
+    return None
+
+
+def _llm_usage_supabase(now: float | None = None) -> int | None:
+    """Total de tokens consumidos na janela de 24h via Supabase.
+
+    Retorna None quando o Supabase não está configurado ou falha (o chamador
+    cai no arquivo local). A janela é fechada no UTC de `now`.
+    """
+    env = _supabase_env()
+    if not env:
+        return None
+    url, key = env
+    now = now if now is not None else time.time()
+    cutoff = now - BUDGET_WINDOW_HOURS * 3600
+    cutoff_iso = datetime.fromtimestamp(cutoff, tz=timezone.utc).isoformat()
+    try:
+        resp = requests.get(
+            f"{url}/rest/v1/llm_usage",
+            params={"select": "sum(tokens)", "criado_em": f"gte.{cutoff_iso}"},
+            headers={"apikey": key, "Authorization": f"Bearer {key}"},
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return None
+        rows = resp.json() or []
+        total = sum(int(r.get("sum") or 0) for r in rows if isinstance(r, dict))
+        return total
+    except (requests.RequestException, ValueError):
+        return None
+
+
+def _record_llm_usage_supabase(tokens: int) -> bool:
+    """Registra o consumo no Supabase. Retorna True em sucesso."""
+    env = _supabase_env()
+    if not env:
+        return False
+    url, key = env
+    try:
+        resp = requests.post(
+            f"{url}/rest/v1/llm_usage",
+            json={"tokens": int(tokens)},
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+            timeout=10,
+        )
+        return resp.status_code in (200, 201, 204)
+    except requests.RequestException:
+        return False
 
 
 def _load_budget_entries(now: float | None = None) -> list[dict]:
@@ -280,7 +345,14 @@ def _load_budget_entries(now: float | None = None) -> list[dict]:
 
 
 def llm_usage_24h() -> int:
-    """Total de tokens consumidos na janela móvel de 24h (entradas válidas)."""
+    """Total de tokens consumidos na janela móvel de 24h.
+
+    Fonte primária: Supabase (persistente entre execuções do cron de ingestão).
+    Fallback: arquivo local (`LLM_BUDGET_FILE` / `.llm_budget.json`).
+    """
+    supabase_total = _llm_usage_supabase()
+    if supabase_total is not None:
+        return supabase_total
     try:
         return sum(int(e.get("n", 0)) for e in _load_budget_entries())
     except (TypeError, ValueError):
@@ -293,14 +365,19 @@ def llm_budget_remaining() -> int:
 
 
 def record_llm_usage(tokens: int) -> None:
-    """Acumula o consumo real (usage.total_tokens) no orçamento persistido."""
+    """Acumula o consumo real (usage.total_tokens) no orçamento persistido.
+
+    Fonte primária: Supabase (persistente entre as execuções efêmeras do cron).
+    Sem credenciais Supabase (dev/testes) ou em falha, grava no arquivo local.
+    """
     if not tokens or tokens <= 0:
         return
-    entries = _load_budget_entries()
-    entries.append({"t": time.time(), "n": int(tokens)})
-    path = _budget_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(entries), encoding="utf-8")
+    if not _record_llm_usage_supabase(int(tokens)):
+        entries = _load_budget_entries()
+        entries.append({"t": time.time(), "n": int(tokens)})
+        path = _budget_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(entries), encoding="utf-8")
 
 
 def _wait_if_rate_limited() -> None:
