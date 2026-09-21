@@ -13,6 +13,8 @@ from synthesizer import (
     llm_usage_24h,
     llm_budget_remaining,
     record_llm_usage,
+    _llm_usage_supabase,
+    _record_llm_usage_supabase,
     DAILY_BUDGET_TOKENS,
 )
 
@@ -379,3 +381,55 @@ def test_call_429_cota_zerada_com_reset_longo_desiste(monkeypatch, tmp_path):
     assert out is None
     assert fake.call_count == 1  # sem retries inúteis com cota zerada
     _reset_rate_state()
+
+
+def test_llm_usage_supabase_sem_env_retorna_none(monkeypatch):
+    # Sem credenciais Supabase (removidas no teste), a leitura cai no arquivo.
+    monkeypatch.delenv("NEXT_PUBLIC_SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    assert _llm_usage_supabase() is None
+
+
+def test_llm_usage_supabase_soma_supabase(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc_key")
+
+    resp = MagicMock()
+    resp.status_code = 200
+    resp.json.return_value = [{"sum": 12345}]
+    monkeypatch.setattr("synthesizer.requests.get", MagicMock(return_value=resp))
+
+    assert _llm_usage_supabase() == 12345
+
+
+def test_record_llm_usage_via_supabase(monkeypatch):
+    from unittest.mock import MagicMock
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc_key")
+
+    resp = MagicMock()
+    resp.status_code = 201
+    post = MagicMock(return_value=resp)
+    monkeypatch.setattr("synthesizer.requests.post", post)
+
+    assert _record_llm_usage_supabase(1500) is True
+    args, kwargs = post.call_args
+    assert args[0] == "https://proj.supabase.co/rest/v1/llm_usage"
+    assert kwargs["json"] == {"tokens": 1500}
+
+
+def test_record_llm_usage_fallback_arquivo_quando_supabase_falha(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc_key")
+
+    resp = MagicMock()
+    resp.status_code = 500
+    monkeypatch.setattr("synthesizer.requests.post", MagicMock(return_value=resp))
+    monkeypatch.setattr("synthesizer.requests.get", MagicMock(return_value=resp))
+
+    assert _record_llm_usage_supabase(999) is False
+    # fallback para o arquivo local continua funcionando
+    record_llm_usage(999)
+    assert llm_usage_24h() == 999
