@@ -1,0 +1,69 @@
+name: Aplicar Migrations do Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: >-
+          Marca as migrations já aplicadas manualmente como aplicadas
+          (use TRUE somente na primeira execução / quando o CI nunca rodou)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validar credencial de banco
+        if: env.SUPABASE_DB_URL == ''
+        run: |
+          echo "::error::Defina o secret SUPABASE_DB_URL (string de conexão do Postgres do projeto, com senha)."
+          exit 1
+
+      # Baseline idempotente: registra como "aplicada" as migrations anteriores,
+      # criadas manualmente via SQL Editor no início do projeto. Isso evita
+      # tentar recriá-las (e quebrar nas policies já existentes) na primeira
+      # execução do supabase db push. Reexecutar é seguro.
+      - name: Registrar baseline das migrations já aplicadas
+        if: inputs.baseline
+        run: |
+          for v in \
+            20260901000000 \
+            20260901000001 \
+            20260902000000 \
+            20260905000000 \
+            20260905010000
+          do
+            supabase migration repair --status applied --db-url "$SUPABASE_DB_URL" "$v"
+          done
+        shell: bash
+
+      - name: Aplicar migrations pendentes
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --include-all
+
+      - name: Notificar falha
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.warning("A aplicação de migrations do Supabase falhou.")
