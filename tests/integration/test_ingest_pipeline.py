@@ -81,6 +81,12 @@ class FakeClient:
             return self._grava
         return self._consulta
 
+    def rpc(self, nome, params=None):
+        payload = params or {}
+        if nome == "upsert_noticia":
+            self._grava._last_payload = payload.get("dados")
+        return FakeResp([payload])
+
 
 @pytest.fixture
 def fake_network(monkeypatch):
