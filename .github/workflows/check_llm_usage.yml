@@ -1,0 +1,58 @@
+name: Verificar persistência do orçamento (Supabase)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-migrate
+  cancel-in-progress: false
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependência HTTP
+        run: pip install -r scripts/requirements.lock.leve.txt
+
+      - name: Testar leitura e escrita na tabela llm_usage
+        env:
+          LLM_BUDGET_FILE: /tmp/budget.json
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "scripts")
+          from synthesizer import _llm_usage_supabase, _record_llm_usage_supabase
+
+          antes = _llm_usage_supabase()
+          print("GET sum(tokens) 24h antes  :", antes)
+
+          # Sonda idempotente: 0 tokens não altera o orçamento, só prova o POST.
+          ok = _record_llm_usage_supabase(0)
+          print("POST registro            :", ok)
+
+          depois = _llm_usage_supabase()
+          print("GET sum(tokens) 24h depois:", depois)
+
+          if antes is None or not ok or depois is None:
+              print("FALHOU: persistência no Supabase não confirmada.")
+              sys.exit(1)
+          print("OK: tabela llm_usage acessível (leitura+escrita via service_role).")
+          PY
