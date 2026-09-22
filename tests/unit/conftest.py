@@ -10,4 +10,5 @@ def _isola_budget(tmp_path, monkeypatch):
     monkeypatch.setenv("LLM_BUDGET_FILE", str(tmp_path / "budget.json"))
     monkeypatch.delenv("NEXT_PUBLIC_SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.delenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", raising=False)
     yield

@@ -387,47 +387,54 @@ def test_llm_usage_supabase_sem_env_retorna_none(monkeypatch):
     # Sem credenciais Supabase (removidas no teste), a leitura cai no arquivo.
     monkeypatch.delenv("NEXT_PUBLIC_SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.delenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", raising=False)
     assert _llm_usage_supabase() is None
 
 
-def test_llm_usage_supabase_soma_supabase(monkeypatch, tmp_path):
+def test_llm_usage_supabase_soma_via_rpc_anon(monkeypatch, tmp_path):
     from unittest.mock import MagicMock
     monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
-    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc_key")
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_key")
 
     resp = MagicMock()
     resp.status_code = 200
-    resp.json.return_value = [{"sum": 12345}]
-    monkeypatch.setattr("synthesizer.requests.get", MagicMock(return_value=resp))
+    resp.json.return_value = 12345
+    post = MagicMock(return_value=resp)
+    monkeypatch.setattr("synthesizer.requests.post", post)
 
     assert _llm_usage_supabase() == 12345
+    args, kwargs = post.call_args
+    assert args[0] == "https://proj.supabase.co/rest/v1/rpc/llm_usage_sum_since"
+    assert "since" in kwargs["json"]
 
 
-def test_record_llm_usage_via_supabase(monkeypatch):
+def test_record_llm_usage_via_rpc_anon(monkeypatch):
     from unittest.mock import MagicMock
     monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
-    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc_key")
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_key")
 
     resp = MagicMock()
-    resp.status_code = 201
+    resp.status_code = 204
     post = MagicMock(return_value=resp)
     monkeypatch.setattr("synthesizer.requests.post", post)
 
     assert _record_llm_usage_supabase(1500) is True
     args, kwargs = post.call_args
-    assert args[0] == "https://proj.supabase.co/rest/v1/llm_usage"
+    assert args[0] == "https://proj.supabase.co/rest/v1/rpc/record_llm_usage"
     assert kwargs["json"] == {"tokens": 1500}
 
 
 def test_record_llm_usage_fallback_arquivo_quando_supabase_falha(monkeypatch, tmp_path):
     from unittest.mock import MagicMock
     monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
-    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc_key")
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_key")
 
     resp = MagicMock()
     resp.status_code = 500
     monkeypatch.setattr("synthesizer.requests.post", MagicMock(return_value=resp))
-    monkeypatch.setattr("synthesizer.requests.get", MagicMock(return_value=resp))
 
     assert _record_llm_usage_supabase(999) is False
     # fallback para o arquivo local continua funcionando
