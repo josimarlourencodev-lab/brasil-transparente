@@ -272,9 +272,20 @@ def _budget_path() -> Path:
 
 
 def _supabase_env() -> tuple[str, str] | None:
-    """URL/credenciais do Supabase (REST/PostgREST), se disponíveis."""
+    """URL/credenciais do Supabase (REST/PostgREST), se disponíveis.
+
+    O orçamento usa a ANON key (NEXT_PUBLIC_SUPABASE_ANON_KEY): é a única
+    credencial do projeto presente nos secrets do repositório. O acesso à
+    tabela llm_usage é feito por funções RPC SECURITY DEFINER, então a anon
+    não precisa (nem deve) ter RLS direto na tabela. Se a service_role já
+    existir no ambiente (dev/testes), ela tem prioridade.
+    """
     url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "").strip().rstrip("/")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+        or ""
+    ).strip()
     if url and key:
         return url, key
     return None
@@ -294,17 +305,19 @@ def _llm_usage_supabase(now: float | None = None) -> int | None:
     cutoff = now - BUDGET_WINDOW_HOURS * 3600
     cutoff_iso = datetime.fromtimestamp(cutoff, tz=timezone.utc).isoformat()
     try:
-        resp = requests.get(
-            f"{url}/rest/v1/llm_usage",
-            params={"select": "sum(tokens)", "criado_em": f"gte.{cutoff_iso}"},
+        # Função RPC SECURITY DEFINER: soma de tokens >= `since` (UTC).
+        resp = requests.post(
+            f"{url}/rest/v1/rpc/llm_usage_sum_since",
+            json={"since": cutoff_iso},
             headers={"apikey": key, "Authorization": f"Bearer {key}"},
             timeout=10,
         )
         if resp.status_code != 200:
             return None
-        rows = resp.json() or []
-        total = sum(int(r.get("sum") or 0) for r in rows if isinstance(r, dict))
-        return total
+        try:
+            return int(resp.json())
+        except (TypeError, ValueError):
+            return None
     except (requests.RequestException, ValueError):
         return None
 
@@ -317,7 +330,7 @@ def _record_llm_usage_supabase(tokens: int) -> bool:
     url, key = env
     try:
         resp = requests.post(
-            f"{url}/rest/v1/llm_usage",
+            f"{url}/rest/v1/rpc/record_llm_usage",
             json={"tokens": int(tokens)},
             headers={
                 "apikey": key,
@@ -327,7 +340,7 @@ def _record_llm_usage_supabase(tokens: int) -> bool:
             },
             timeout=10,
         )
-        return resp.status_code in (200, 201, 204)
+        return resp.status_code == 204
     except requests.RequestException:
         return False
 
