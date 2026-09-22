@@ -18,7 +18,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
     steps:
       - name: Checkout
@@ -32,7 +32,7 @@ jobs:
       - name: Instalar dependência HTTP
         run: pip install -r scripts/requirements.lock.leve.txt
 
-      - name: Testar leitura e escrita na tabela llm_usage
+      - name: Testar leitura e escrita via RPC anon (llm_usage)
         env:
           LLM_BUDGET_FILE: /tmp/budget.json
         run: |
@@ -42,17 +42,17 @@ jobs:
           from synthesizer import _llm_usage_supabase, _record_llm_usage_supabase
 
           antes = _llm_usage_supabase()
-          print("GET sum(tokens) 24h antes  :", antes)
+          print("RPC soma tokens 24h antes  :", antes)
 
-          # Sonda idempotente: 0 tokens não altera o orçamento, só prova o POST.
+          # Sonda idempotente: 0 tokens não altera o orçamento, só prova a escrita.
           ok = _record_llm_usage_supabase(0)
-          print("POST registro            :", ok)
+          print("RPC registro              :", ok)
 
           depois = _llm_usage_supabase()
-          print("GET sum(tokens) 24h depois:", depois)
+          print("RPC soma tokens 24h depois:", depois)
 
           if antes is None or not ok or depois is None:
               print("FALHOU: persistência no Supabase não confirmada.")
               sys.exit(1)
-          print("OK: tabela llm_usage acessível (leitura+escrita via service_role).")
+          print("OK: RPC llm_usage_sum_since/record_llm_usage acessíveis via anon.")
           PY
