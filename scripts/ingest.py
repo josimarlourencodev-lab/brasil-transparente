@@ -40,12 +40,22 @@ def load_env():
 
 
 def build_client():
+    """Cliente do Supabase. Prioriza a service_role; sem ela (cron do GH
+    Actions), usa a ANON key (NEXT_PUBLIC_SUPABASE_ANON_KEY) — leituras
+    funcionam via RLS, e a escrita de notícias usa a RPC upsert_noticia
+    (SECURITY DEFINER)."""
     from supabase import create_client
 
     url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    )
     if not url or not key:
-        raise RuntimeError("NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias.")
+        raise RuntimeError(
+            "NEXT_PUBLIC_SUPABASE_URL e (SUPABASE_SERVICE_ROLE_KEY | "
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY) são obrigatórias."
+        )
     return create_client(url, key)
 
 
@@ -132,7 +142,7 @@ def upsert_items(client, items: list[dict], politico_cache: dict[str, int] | Non
             },
         }
         try:
-            resp = client.table("noticias").upsert(data, on_conflict="url").execute()
+            resp = client.rpc("upsert_noticia", {"dados": data}).execute()
             if resp.data:
                 saved += 1
         except Exception as exc:
