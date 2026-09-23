@@ -20,10 +20,13 @@ Fluxo:
      político — apaga a anterior e insere a nova; idempotente).
 
 Variáveis usadas:
-  NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY  (escrita no banco)
+  NEXT_PUBLIC_SUPABASE_URL + (SUPABASE_SERVICE_ROLE_KEY ou NEXT_PUBLIC_SUPABASE_ANON_KEY)
   LLM_API_KEY                  (chave da Groq — mesma chave do site)
   FICHA_LLM_MODEL              (padrão: openai/gpt-oss-120b — cota isolada da
                                 síntese diária, como o podcast)
+
+Sem service_role, a escrita da ficha usa a RPC SECURITY DEFINER
+substituir_ficha (ver supabase/migrations/20260923000000_podcast_ficha_rpc.sql).
 
 Modo de uso:
   python scripts/ficha.py                        # todos os políticos
@@ -98,13 +101,20 @@ def _env(name: str, default: str | None = None) -> str | None:
 
 
 def _build_client():
+    """Cliente do Supabase. Prioriza a service_role; sem ela (cron do GH
+    Actions), usa a ANON key (NEXT_PUBLIC_SUPABASE_ANON_KEY) — leituras via
+    RLS e escrita da ficha pela RPC substituir_ficha (SECURITY DEFINER)."""
     from supabase import create_client
 
     url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    )
     if not url or not key:
         raise RuntimeError(
-            "NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias."
+            "NEXT_PUBLIC_SUPABASE_URL e (SUPABASE_SERVICE_ROLE_KEY | "
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY) são obrigatórias."
         )
     return create_client(url, key)
 
@@ -258,18 +268,14 @@ def _sintetizar_ficha(politico: dict, noticias: list[dict]) -> list[dict]:
 
 
 def _gravar_ficha(client, politico_id: int, casos: list[dict]) -> bool:
-    """Apaga a ficha anterior do político e insere a nova (idempotente)."""
+    """Substitui toda a ficha do político via RPC (apaga anterior + insere,
+    atomicamente, como SECURITY DEFINER no banco)."""
     if casos is None:
         return False
-    client.table("ficha_politico").delete().eq("politico_id", politico_id).execute()
-    if not casos:
-        return True
     registros = []
-    agora = dt.datetime.now(dt.timezone.utc).isoformat()
     for c in casos:
         registros.append(
             {
-                "politico_id": politico_id,
                 "tipo": c["tipo"],
                 "status": c["status"],
                 "titulo": c["titulo"],
@@ -277,15 +283,15 @@ def _gravar_ficha(client, politico_id: int, casos: list[dict]) -> bool:
                 "orgao": c["orgao"],
                 "data_fato": c["data_fato"],
                 "fontes": c["fontes"],
-                "criado_em": agora,
-                "atualizado_em": agora,
             }
         )
-    resp = client.table("ficha_politico").insert(registros).execute()
+    resp = client.rpc(
+        "substituir_ficha", {"p_politico_id": politico_id, "casos": registros}
+    ).execute()
     if getattr(resp, "error", None):
         print(f"[ficha] erro ao gravar {len(registros)} casos: {resp.error}")
         return False
-    return True
+    return bool(resp.data)
 
 
 def main(argv=None) -> int:

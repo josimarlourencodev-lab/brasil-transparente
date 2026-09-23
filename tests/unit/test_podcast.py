@@ -14,6 +14,7 @@ from podcast import (
     _duracao_aprox,
     _titulo_da_semana,
     _episodio_da_semana_ja_existe,
+    _registrar_episodio,
 )
 
 
@@ -199,3 +200,47 @@ def test_carregar_noticias_passa_filtros(monkeypatch):
     filtros = {s[1][0]: s[1][1] for s in seq.steps if s[0] in ("eq", "gte")}
     assert filtros["status"] == "publicado"
     assert "gte" in [s[0] for s in seq.steps]
+
+
+def test_registrar_episodio_usa_rpc_anon():
+    class Resp:
+        data = [42]
+        error = None
+
+    class Client:
+        def __init__(self):
+            self.calls = []
+
+        def rpc(self, nome, params=None):
+            self.calls.append((nome, params))
+            return self
+
+        def execute(self):
+            return Resp()
+
+    client = Client()
+    ok = _registrar_episodio(client, "Titulo", "Desc", "Roteiro", "https://url/audio.mp3",
+                             thumb_url="https://url/thumb.jpg")
+    assert ok is True
+    nome, params = client.calls[0]
+    assert nome == "registrar_episodio"
+    assert params["dados"]["titulo"] == "Titulo"
+    assert params["dados"]["thumb_url"] == "https://url/thumb.jpg"
+
+
+def test_build_client_cai_para_anon_sem_service_role(monkeypatch):
+    import podcast as p
+
+    chamadas = []
+
+    def fake_create_client(url, key):
+        chamadas.append((url, key))
+        return object()
+
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_key")
+    monkeypatch.setattr("supabase.create_client", fake_create_client)
+
+    p._build_client()
+    assert chamadas == [("https://proj.supabase.co", "anon_key")]
