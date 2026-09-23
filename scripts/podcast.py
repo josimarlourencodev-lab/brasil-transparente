@@ -15,11 +15,15 @@ Fluxo:
 Deve ser executado por agendador (cron semanal via GitHub Actions).
 
 Variáveis usadas:
-  NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY  (escrita no banco/storage)
+  NEXT_PUBLIC_SUPABASE_URL + (SUPABASE_SERVICE_ROLE_KEY ou NEXT_PUBLIC_SUPABASE_ANON_KEY)
   LLM_API_KEY                  (chave da Groq — mesma chave do site)
   PODCAST_LLM_MODEL            (padrão: qwen/qwen3.6-27b)
   PODCAST_VOICE                (voz edge-tts PT-BR; padrão: pt-BR-FranciscaNeural)
   PODCAST_DAYS                 (janela de dias; padrão: 7)
+
+Sem service_role, a escrita usa as RPCs SECURITY DEFINER registrar_episodio
+e as policies de escrita da anon no bucket de storage (ver
+supabase/migrations/20260923000000_podcast_ficha_rpc.sql).
 """
 
 from __future__ import annotations
@@ -72,13 +76,20 @@ def _env(name: str, default: str | None = None) -> str | None:
 
 
 def _build_client():
+    """Cliente do Supabase. Prioriza a service_role; sem ela (cron do GH
+    Actions), usa a ANON key (NEXT_PUBLIC_SUPABASE_ANON_KEY) — leituras via
+    RLS e escrita de episódios pela RPC registrar_episodio (SECURITY DEFINER)."""
     from supabase import create_client
 
     url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    )
     if not url or not key:
         raise RuntimeError(
-            "NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias."
+            "NEXT_PUBLIC_SUPABASE_URL e (SUPABASE_SERVICE_ROLE_KEY | "
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY) são obrigatórias."
         )
     return create_client(url, key)
 
@@ -253,7 +264,7 @@ def _registrar_episodio(client, titulo: str, descricao: str, roteiro: str,
     }
     if thumb_url:
         data["thumb_url"] = thumb_url
-    resp = client.table("podcast_episodios").insert(data).execute()
+    resp = client.rpc("registrar_episodio", {"dados": data}).execute()
     return bool(resp.data)
 
 
