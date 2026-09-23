@@ -14,6 +14,7 @@ from ficha import (
     _noticias_do_politico,
     _sem_acento,
     _sintetizar_ficha,
+    _gravar_ficha,
 )
 
 
@@ -169,3 +170,55 @@ def test_sintetizar_ficha_falha_nao_apaga_ficha_existente(monkeypatch):
     # sintetizar_ficha retorna None em falha; a gravação só substitui quando há
     # resultado válido (garantido por quem grava, ver main --dry-run)
     assert _sintetizar_ficha({"nome": "A"}, []) == []  # sem chave: vazio, não falha
+
+
+def test_gravar_ficha_usa_rpc_substituir_ficha():
+    class Resp:
+        data = [True]
+        error = None
+
+    class Client:
+        def __init__(self):
+            self.calls = []
+
+        def rpc(self, nome, params=None):
+            self.calls.append((nome, params))
+            return self
+
+        def execute(self):
+            return Resp()
+
+    casos = [
+        {"tipo": "processo", "status": "em_andamento", "titulo": "X",
+         "descricao": "d", "orgao": "STF", "data_fato": None, "fontes": []}
+    ]
+    client = Client()
+    ok = _gravar_ficha(client, 7, casos)
+    assert ok is True
+    nome, params = client.calls[0]
+    assert nome == "substituir_ficha"
+    assert params["p_politico_id"] == 7
+    assert params["casos"][0]["titulo"] == "X"
+
+
+def test_gravar_ficha_casos_none_nao_chama_rpc():
+    client = type("Client", (), {"rpc": lambda self, *a, **k: (_ for _ in ()).throw(AssertionError)})()
+    assert _gravar_ficha(client, 1, None) is False
+
+
+def test_build_client_cai_para_anon_sem_service_role(monkeypatch):
+    import ficha as f
+
+    chamadas = []
+
+    def fake_create_client(url, key):
+        chamadas.append((url, key))
+        return object()
+
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co")
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon_key")
+    monkeypatch.setattr("supabase.create_client", fake_create_client)
+
+    f._build_client()
+    assert chamadas == [("https://proj.supabase.co", "anon_key")]
