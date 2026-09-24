@@ -15,7 +15,8 @@ export async function GET() {
     .from("noticias")
     .select("id, titulo, resumo, categoria, publicado_em, url")
     .eq("status", "publicado")
-    .order("publicado_em", { ascending: false })
+    .order("publicado_em", { ascending: false, nullsFirst: false })
+    .order("coletado_em", { ascending: false })
     .limit(50);
 
   const items = (noticias ?? [])
