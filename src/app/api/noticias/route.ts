@@ -11,7 +11,8 @@ export async function GET(request: Request) {
     .from("noticias")
     .select("*, politica:politicos(*)")
     .eq("status", "publicado")
-    .order("publicado_em", { ascending: false })
+    .order("publicado_em", { ascending: false, nullsFirst: false })
+    .order("coletado_em", { ascending: false })
     .limit(limit);
 
   if (filter) {

@@ -60,7 +60,8 @@ export default async function NoticiasPage({
       "id, titulo, resumo, categoria, tipo_fonte, publicado_em, url, imagem_url, politica:politicos(id, nome)"
     )
     .eq("status", "publicado")
-    .order("publicado_em", { ascending: false })
+    .order("publicado_em", { ascending: false, nullsFirst: false })
+    .order("coletado_em", { ascending: false })
     .limit(100);
 
   if (termo) {
