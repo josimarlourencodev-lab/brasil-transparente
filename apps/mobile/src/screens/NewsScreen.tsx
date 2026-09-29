@@ -22,7 +22,8 @@ export function NewsScreen() {
       .from("noticias")
       .select("*, politico:politico_id(id, nome, partido, foto_url)")
       .eq("status", "publicado")
-      .order("publicado_em", { ascending: false })
+      .order("publicado_em", { ascending: false, nullsFirst: false })
+      .order("coletado_em", { ascending: false })
       .limit(50);
     if (!error) setNoticias(data ?? []);
   }
