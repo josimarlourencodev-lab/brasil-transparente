@@ -50,7 +50,7 @@ export function PodcastScreen() {
     const { data, error } = await supabase
       .from("podcast_episodios")
       .select("id, titulo, descricao, audio_url, thumb_url, duracao_seg, publicado_em")
-      .order("publicado_em", { ascending: false })
+      .order("publicado_em", { ascending: false, nullsFirst: false })
       .limit(30);
     if (!error) setEpisodios(data ?? []);
   }
