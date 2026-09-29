@@ -136,6 +136,10 @@ export default async function PoliticosPage() {
                       <img
                         src={p.foto_url}
                         alt={`Foto de ${p.nome}`}
+                        width={64}
+                        height={64}
+                        loading="lazy"
+                        decoding="async"
                         className="h-16 w-16 shrink-0 rounded-full object-cover"
                       />
                     ) : (

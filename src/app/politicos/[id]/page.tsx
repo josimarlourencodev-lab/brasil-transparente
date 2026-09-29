@@ -60,7 +60,8 @@ const buscarPerfil = cache(async (id: number): Promise<Perfil | null> => {
       .or(
         `politico_id.eq.${id},titulo.ilike.%${politico.nome}%,resumo.ilike.%${politico.nome}%`
       )
-      .order("publicado_em", { ascending: false })
+      .order("publicado_em", { ascending: false, nullsFirst: false })
+      .order("coletado_em", { ascending: false })
       .limit(50),
     supabase().from("ficha_politico").select("*").eq("politico_id", id),
   ]);
@@ -180,6 +181,10 @@ export default async function PoliticoDetailPage({ params }: Props) {
             <img
               src={politico.foto_url}
               alt={`Foto de ${politico.nome}`}
+              width={160}
+              height={160}
+              loading="lazy"
+              decoding="async"
               className="h-40 w-40 shrink-0 rounded-full object-cover"
             />
           ) : (
@@ -299,6 +304,10 @@ export default async function PoliticoDetailPage({ params }: Props) {
                   <img
                     src={n.imagem_url}
                     alt=""
+                    width={160}
+                    height={128}
+                    loading="lazy"
+                    decoding="async"
                     className="h-32 w-full shrink-0 rounded-lg object-cover sm:h-28 sm:w-40"
                   />
                 )}
