@@ -62,7 +62,8 @@ export function DetalhePoliticoScreen() {
         .select("*, politico:politico_id(id, nome, partido, foto_url)")
         .eq("status", "publicado")
         .eq("politico_id", id)
-        .order("publicado_em", { ascending: false })
+        .order("publicado_em", { ascending: false, nullsFirst: false })
+        .order("coletado_em", { ascending: false })
         .limit(50);
       if (!nError && !stale) {
         setNoticias(
@@ -89,7 +90,8 @@ export function DetalhePoliticoScreen() {
       .select("*, politico:politico_id(id, nome, partido, foto_url)")
       .eq("status", "publicado")
       .or(`titulo.ilike.%${nome}%,resumo.ilike.%${nome}%`)
-      .order("publicado_em", { ascending: false })
+      .order("publicado_em", { ascending: false, nullsFirst: false })
+      .order("coletado_em", { ascending: false })
       .limit(50);
     return data ?? [];
   }
