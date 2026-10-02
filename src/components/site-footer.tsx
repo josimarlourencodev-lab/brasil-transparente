@@ -33,6 +33,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/eleicoes" className="text-white/70 transition hover:text-white">
+                  Eleições 2026
+                </Link>
+              </li>
+              <li>
                 <Link href="/#sobre" className="text-white/70 transition hover:text-white">
                   Sobre o projeto
                 </Link>
