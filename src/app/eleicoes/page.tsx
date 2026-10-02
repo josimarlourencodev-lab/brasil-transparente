@@ -1,17 +1,29 @@
 import type { Metadata } from "next";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 import PercentIcon from "@mui/icons-material/Percent";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import DonutLargeIcon from "@mui/icons-material/DonutLarge";
+import LeaderboardRoundedIcon from "@mui/icons-material/LeaderboardRounded";
+import ShowChartIcon from "@mui/icons-material/ShowChart";
+import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import HowlIcon from "@mui/icons-material/GraphicEq";
-import { consultarResultadoPresidencial } from "@/lib/tse";
+import {
+  consultarResultadoPresidencial,
+  consultarResultadosPorEstado,
+} from "@/lib/tse";
 import { JsonLd } from "@/components/json-ld";
 import { absoluto, SITE_NAME } from "@/lib/seo";
+import { DonutVotos } from "@/components/eleicoes/donut-votos";
+import { BarraVotos } from "@/components/eleicoes/barra-votos";
+import { LinhaApuracao } from "@/components/eleicoes/linha-apuracao";
+import { EstadosVencedores } from "@/components/eleicoes/estados-vencedores";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Eleições 2026 — Apuração em tempo real",
   description:
-    "Acompanhe a totalização oficial do TSE para a Presidência da República nas Eleições 2026: percentual apurado, votos válidos, brancos e nulos, e ranking dos candidatos.",
+    "Acompanhe a totalização oficial do TSE para a Presidência da República nas Eleições 2026: percentual apurado, votos válidos, brancos e nulos, evolução da apuração e ranking dos candidatos por estado.",
   alternates: { canonical: "/eleicoes" },
 };
 
@@ -32,12 +44,20 @@ function formatarData(geradoEm: string | null): string {
 export default async function EleicoesPage() {
   let resultado: Awaited<ReturnType<typeof consultarResultadoPresidencial>> =
     null;
+  let estados: Awaited<ReturnType<typeof consultarResultadosPorEstado>> = null;
   let erro = false;
   try {
-    resultado = await consultarResultadoPresidencial();
+    [resultado, estados] = await Promise.all([
+      consultarResultadoPresidencial(),
+      consultarResultadosPorEstado(),
+    ]);
   } catch {
     erro = true;
   }
+
+  const candidatos = resultado?.cargos[0]?.candidatos ?? [];
+  const lider = candidatos[0]?.votos ?? 1;
+  const listaValidos = candidatos.filter((c) => !c.anulado);
 
   return (
     <div className="min-h-screen">
@@ -75,8 +95,9 @@ export default async function EleicoesPage() {
                 Eleições 2026 · apuração em tempo real
               </h1>
               <p className="mt-3 text-base text-white/75 sm:text-lg">
-                Presidência da República (1º turno) — ranking atualizado
-                automaticamente a partir dos dados oficiais divulgados pelo TSE.
+                Presidência da República (1º turno) — ranking, gráficos e
+                resultado por estado atualizados automaticamente a partir dos
+                dados oficiais divulgados pelo TSE.
               </p>
             </div>
           </div>
@@ -109,7 +130,8 @@ export default async function EleicoesPage() {
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-neutral-dark/60 dark:text-neutral-400">
-                Atualização: <strong>{formatarData(resultado.gerado_em)}</strong>
+                Atualização:{" "}
+                <strong>{formatarData(resultado.gerado_em)}</strong>
                 {resultado.totalizacao_finalizada && (
                   <span className="chip ml-2 bg-success/10 text-success">
                     Apuração finalizada
@@ -125,7 +147,9 @@ export default async function EleicoesPage() {
                 </p>
                 <p className="mt-2 font-display text-3xl font-bold text-primary dark:text-primary-light">
                   {resultado.secao.pct !== null
-                    ? `${resultado.secao.pct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`
+                    ? `${resultado.secao.pct.toLocaleString("pt-BR", {
+                        maximumFractionDigits: 1,
+                      })}%`
                     : "—"}
                 </p>
                 <p className="mt-1 text-xs text-neutral-dark/60 dark:text-neutral-400">
@@ -142,7 +166,9 @@ export default async function EleicoesPage() {
                 </p>
                 <p className="mt-1 text-xs text-neutral-dark/60 dark:text-neutral-400">
                   {resultado.votos.pct_validos !== null
-                    ? `${resultado.votos.pct_validos.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% do total`
+                    ? `${resultado.votos.pct_validos.toLocaleString("pt-BR", {
+                        maximumFractionDigits: 1,
+                      })}% do total`
                     : "—"}
                 </p>
               </div>
@@ -178,55 +204,125 @@ export default async function EleicoesPage() {
               </div>
             </div>
 
-            {resultado.cargos.length > 0 && (
+            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+              <div className="card p-6 sm:p-8">
+                <div className="flex items-center gap-2">
+                  <DonutLargeIcon className="h-5 w-5 text-primary dark:text-primary-light" />
+                  <h2 className="font-display text-xl font-semibold text-primary dark:text-primary-light">
+                    Destino dos votos
+                  </h2>
+                </div>
+                <div className="mt-6">
+                  <DonutVotos votos={resultado.votos} />
+                </div>
+              </div>
+
+              <div className="card p-6 sm:p-8">
+                <div className="flex items-center gap-2">
+                  <ShowChartIcon className="h-5 w-5 text-primary dark:text-primary-light" />
+                  <h2 className="font-display text-xl font-semibold text-primary dark:text-primary-light">
+                    Evolução da apuração{" "}
+                    <span className="text-sm font-normal text-neutral-dark/50 dark:text-neutral-400">
+                      (ao vivo)
+                    </span>
+                  </h2>
+                </div>
+                <div className="mt-2">
+                  <LinhaApuracao
+                    inicial={{
+                      pct: resultado.secao.pct,
+                      gerado_em: resultado.gerado_em,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {candidatos.length > 0 && (
               <div className="card mt-8 p-6 sm:p-8">
-                <h2 className="font-display text-xl font-semibold text-primary dark:text-primary-light">
-                  Ranking — {resultado.cargos[0].nome}
-                </h2>
-                <div className="mt-6 space-y-4">
-                  {resultado.cargos[0].candidatos
-                    .filter((c) => !c.anulado)
-                    .map((c, index) => {
-                      const max = resultado.cargos[0].candidatos[0]?.votos ?? 1;
-                      const largura =
-                        max > 0 ? Math.max((c.votos / max) * 100, 2) : 0;
-                      return (
-                        <div key={c.sq}>
-                          <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className="font-display font-bold text-neutral-dark/40 dark:text-neutral-500">
-                                {String(index + 1).padStart(2, "0")}
-                              </span>
-                              <span className="truncate font-semibold text-neutral-dark dark:text-neutral-100">
-                                {c.nome_urna}
-                              </span>
-                              <span className="chip hidden shrink-0 bg-neutral-dark/5 text-neutral-dark/70 dark:bg-white/10 dark:text-neutral-300 sm:inline-flex">
-                                {c.partido}
-                              </span>
-                            </span>
-                            <span className="shrink-0 text-neutral-dark/80 dark:text-neutral-300">
-                              <strong>
-                                {c.pct_votos_validos !== null
-                                  ? `${c.pct_votos_validos.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`
-                                  : "—"}
-                              </strong>
-                              <span className="ml-2 text-xs text-neutral-dark/50 dark:text-neutral-400">
-                                {cortar(c.votos)}
-                              </span>
-                            </span>
-                          </div>
-                          <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-neutral-dark/10 dark:bg-white/10">
-                            <div
-                              className="h-full rounded-full bg-accent"
-                              style={{ width: `${largura}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                <div className="flex items-center gap-2">
+                  <BarChartIcon className="h-5 w-5 text-primary dark:text-primary-light" />
+                  <h2 className="font-display text-xl font-semibold text-primary dark:text-primary-light">
+                    Votos por candidato —{" "}
+                    {resultado.cargos[0]?.nome ?? "Presidente"}
+                  </h2>
+                </div>
+                <div className="mt-6">
+                  <BarraVotos candidatos={candidatos} />
                 </div>
               </div>
             )}
+
+            {listaValidos.length > 0 && (
+              <div className="card mt-8 p-6 sm:p-8">
+                <div className="flex items-center gap-2">
+                  <LeaderboardRoundedIcon className="h-5 w-5 text-primary dark:text-primary-light" />
+                  <h2 className="font-display text-xl font-semibold text-primary dark:text-primary-light">
+                    Ranking — {resultado.cargos[0]?.nome ?? "Presidente"}
+                  </h2>
+                </div>
+                <div className="mt-6 space-y-4">
+                  {listaValidos.map((c, index) => {
+                    const largura =
+                      lider > 0 ? Math.max((c.votos / lider) * 100, 2) : 0;
+                    return (
+                      <div key={c.sq}>
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="font-display font-bold text-neutral-dark/40 dark:text-neutral-500">
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <span className="truncate font-semibold text-neutral-dark dark:text-neutral-100">
+                              {c.nome_urna}
+                            </span>
+                            <span className="chip hidden shrink-0 bg-neutral-dark/5 text-neutral-dark/70 dark:bg-white/10 dark:text-neutral-300 sm:inline-flex">
+                              {c.partido}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-neutral-dark/80 dark:text-neutral-300">
+                            <strong>
+                              {c.pct_votos_validos !== null
+                                ? `${c.pct_votos_validos.toLocaleString("pt-BR", {
+                                    maximumFractionDigits: 2,
+                                  })}%`
+                                : "—"}
+                            </strong>
+                            <span className="ml-2 text-xs text-neutral-dark/50 dark:text-neutral-400">
+                              {cortar(c.votos)}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-neutral-dark/10 dark:bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-accent"
+                            style={{ width: `${largura}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="card mt-8 p-6 sm:p-8">
+              <div className="flex items-center gap-2">
+                <MapOutlinedIcon className="h-5 w-5 text-primary dark:text-primary-light" />
+                <h2 className="font-display text-xl font-semibold text-primary dark:text-primary-light">
+                  Onde cada candidato lidera
+                </h2>
+              </div>
+              <p className="mt-1 text-sm text-neutral-dark/60 dark:text-neutral-400">
+                Estado onde cada candidato tem mais votos válidos apurados até
+                agora.
+              </p>
+              <div className="mt-5">
+                <EstadosVencedores
+                  estados={estados ?? []}
+                  acessivel={estados !== null && estados.length > 0}
+                />
+              </div>
+            </div>
 
             <p className="mt-6 text-xs leading-relaxed text-neutral-dark/50 dark:text-neutral-400">
               {DISCLAIMER}
