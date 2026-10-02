@@ -29,6 +29,12 @@ const ESTATICAS: MetadataRoute.Sitemap = [
     priority: 0.4,
   },
   {
+    url: `${SITE_URL}/eleicoes`,
+    lastModified: new Date(),
+    changeFrequency: "hourly",
+    priority: 0.8,
+  },
+  {
     url: `${SITE_URL}/pitch`,
     lastModified: new Date(),
     changeFrequency: "monthly",
