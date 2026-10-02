@@ -10,6 +10,8 @@ import HowlIcon from "@mui/icons-material/GraphicEq";
 import {
   consultarResultadoPresidencial,
   consultarResultadosPorEstado,
+  consultarTurnoAtivo,
+  type Turno,
 } from "@/lib/tse";
 import { JsonLd } from "@/components/json-ld";
 import { absoluto, SITE_NAME } from "@/lib/seo";
@@ -27,8 +29,18 @@ export const metadata: Metadata = {
   alternates: { canonical: "/eleicoes" },
 };
 
-const DISCLAIMER =
-  "Dados oficiais do TSE (Portal Resultados), atualizados automaticamente durante a totalização. 1º turno: 04/10/2026, divulgação a partir das 17h (horário de Brasília).";
+const INFO_TURNO: Record<Turno, { data: string; texto: string; divulga: string }> = {
+  1: {
+    data: "04/10/2026",
+    texto: "1º turno",
+    divulga: "1º turno: 04/10/2026",
+  },
+  2: {
+    data: "25/10/2026",
+    texto: "2º turno",
+    divulga: "2º turno: 25/10/2026",
+  },
+};
 
 function cortar(n: number): string {
   if (n === 0) return "0";
@@ -45,15 +57,19 @@ export default async function EleicoesPage() {
   let resultado: Awaited<ReturnType<typeof consultarResultadoPresidencial>> =
     null;
   let estados: Awaited<ReturnType<typeof consultarResultadosPorEstado>> = null;
+  let turno: Turno = 1;
   let erro = false;
   try {
-    [resultado, estados] = await Promise.all([
+    [resultado, estados, turno] = await Promise.all([
       consultarResultadoPresidencial(),
       consultarResultadosPorEstado(),
+      consultarTurnoAtivo().then((t) => t.turno),
     ]);
   } catch {
     erro = true;
   }
+
+  const infoTurno = INFO_TURNO[turno];
 
   const candidatos = resultado?.cargos[0]?.candidatos ?? [];
   const lider = candidatos[0]?.votos ?? 1;
@@ -95,8 +111,8 @@ export default async function EleicoesPage() {
                 Eleições 2026 · apuração em tempo real
               </h1>
               <p className="mt-3 text-base text-white/75 sm:text-lg">
-                Presidência da República (1º turno) — ranking, gráficos e
-                resultado por estado atualizados automaticamente a partir dos
+                Presidência da República ({infoTurno.texto}) — ranking, gráficos
+                e resultado por estado atualizados automaticamente a partir dos
                 dados oficiais divulgados pelo TSE.
               </p>
             </div>
@@ -116,10 +132,10 @@ export default async function EleicoesPage() {
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-dark/20 bg-white py-20 text-center dark:border-white/15 dark:bg-neutral-panel">
             <HowlIcon className="h-12 w-12 text-neutral-dark/30 dark:text-neutral-500" />
             <p className="mt-4 max-w-md text-neutral-dark/60 dark:text-neutral-400">
-              A totalização presidencial das Eleições 2026 ainda não começou. A
-              divulgação oficial do TSE abre no dia{" "}
+              A totalização presidencial ({infoTurno.texto}) das Eleições 2026
+              ainda não começou. A divulgação oficial do TSE abre no dia{" "}
               <strong className="text-primary dark:text-primary-light">
-                04/10/2026
+                {infoTurno.data}
               </strong>{" "}
               a partir das <strong>17h</strong> (horário de Brasília).
             </p>
@@ -325,7 +341,9 @@ export default async function EleicoesPage() {
             </div>
 
             <p className="mt-6 text-xs leading-relaxed text-neutral-dark/50 dark:text-neutral-400">
-              {DISCLAIMER}
+              Dados oficiais do TSE (Portal Resultados), atualizados
+              automaticamente durante a totalização. {infoTurno.divulga},
+              divulgação a partir das 17h (horário de Brasília).
             </p>
           </>
         )}
