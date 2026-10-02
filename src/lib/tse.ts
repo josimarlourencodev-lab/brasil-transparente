@@ -30,9 +30,13 @@ export type ResumoTotalizacao = {
   };
 };
 
+export type Turno = 1 | 2;
+
 export type ResultadoPresidencial = ResumoTotalizacao & {
   uf: string;
   uf_nome: string;
+  turno: Turno;
+  eleicao_cd: string;
   cargos: CargoTSE[];
   gerado_em: string | null;
   data_apuracao: string | null;
@@ -44,6 +48,8 @@ export type ResultadoPresidencial = ResumoTotalizacao & {
 export type ResultadoPorEstado = {
   uf: string;
   uf_nome: string;
+  turno: Turno;
+  eleicao_cd: string;
   votante_maioria: CandidatoTSE | null;
   segundo: CandidatoTSE | null;
   cargo: { cd: string; nome: string } | null;
@@ -83,17 +89,114 @@ export const UFS = [
 ] as const;
 
 const CD_CARGO_PRESIDENTE = "1";
+const CICLO_DEFAULT = "ele2026";
+const CD_ELEICAO_T1_DEFAULT = "6257";
+const CD_ELEICAO_T2_DEFAULT = "6258";
 
-function urlDeUF(uf: string): string {
-  const ambiente = process.env.TSE_RESULTADOS_URL ?? "";
-  if (ambiente) return ambiente.replaceAll("{uf}", uf);
-  return `https://resultados.tse.jus.br/oficial/ele2026/6257/dados/${uf}/${uf}-c0001-e06257-u.json`;
+type ElementoEleicao = {
+  cd?: string;
+  cdt2?: string;
+  nm?: string;
+  abr?: Array<{ cd?: string; cp?: Array<{ cd?: string; ds?: string }> }>;
+};
+
+type ConfigTSE = {
+  cd_t1: string;
+  cd_t2: string;
+  ciclo: string;
+};
+
+const CONFIG_PADRAO: ConfigTSE = {
+  cd_t1: CD_ELEICAO_T1_DEFAULT,
+  cd_t2: CD_ELEICAO_T2_DEFAULT,
+  ciclo: CICLO_DEFAULT,
+};
+
+let memoriaConfig: { quando: number; valor: ConfigTSE } | null = null;
+
+async function carregarConfig(): Promise<ConfigTSE> {
+  if (memoriaConfig && Date.now() - memoriaConfig.quando < 60_000) {
+    return memoriaConfig.valor;
+  }
+  try {
+    const res = await fetch(
+      "https://resultados.tse.jus.br/oficial/comum/config/ele-c.json",
+      {
+        headers: {
+          "User-Agent":
+            "BrasilTransparenteBot/0.3 (monitoramento eleitoral)",
+        },
+        next: { revalidate: 3600 },
+      }
+    );
+    if (res.ok) {
+      const dados = (await res.json()) as {
+        pl?: Array<{ c?: string; dt?: string; e?: ElementoEleicao[] }>;
+      };
+      const pleitoT1 = (dados.pl ?? []).find(
+        (p) =>
+          p.c === CICLO_DEFAULT && (p.dt ?? "").startsWith("04/10/2026")
+      );
+      const federal = (pleitoT1?.e ?? []).find(
+        (e) =>
+          String(e.cd) === CD_ELEICAO_T1_DEFAULT ||
+          (e.nm ?? "").includes("Federal")
+      );
+      memoriaConfig = {
+        quando: Date.now(),
+        valor: {
+          cd_t1: federal?.cd || CONFIG_PADRAO.cd_t1,
+          cd_t2: federal?.cdt2 || CONFIG_PADRAO.cd_t2,
+          ciclo: pleitoT1?.c || CONFIG_PADRAO.ciclo,
+        },
+      };
+    }
+  } catch {
+    /* usa o padrão se o config não responder */
+  }
+  return memoriaConfig?.valor ?? CONFIG_PADRAO;
+}
+
+function isSimulado(): boolean {
+  return Boolean(
+    process.env.TSE_RESULTADOS_URL &&
+      !process.env.TSE_RESULTADOS_URL.includes("{eleicao}")
+  );
+}
+
+export async function consultarTurnoAtivo(): Promise<{
+  turno: Turno;
+  eleicao_cd: string;
+}> {
+  const config = await carregarConfig();
+  const forcar = process.env.TSE_TURNO;
+
+  if (isSimulado() && forcar !== "2") {
+    return { turno: 1, eleicao_cd: config.cd_t1 };
+  }
+  if (forcar === "1") return { turno: 1, eleicao_cd: config.cd_t1 };
+  if (forcar === "2") return { turno: 2, eleicao_cd: config.cd_t2 };
+
+  const res = await fetch(urlDeUF("br", config.cd_t2), metadata);
+  if (res.ok) return { turno: 2, eleicao_cd: config.cd_t2 };
+  return { turno: 1, eleicao_cd: config.cd_t1 };
 }
 
 export const metadata: RequestInit = {
-  headers: { "User-Agent": "BrasilTransparenteBot/0.2 (monitoramento eleitoral)" },
+  headers: {
+    "User-Agent": "BrasilTransparenteBot/0.3 (monitoramento eleitoral)",
+  },
   next: { revalidate: 30 },
 };
+
+export function urlDeUF(uf: string, eleicaoCd = CD_ELEICAO_T1_DEFAULT): string {
+  const ambiente = process.env.TSE_RESULTADOS_URL ?? "";
+  if (ambiente)
+    return ambiente
+      .replaceAll("{uf}", uf)
+      .replaceAll("{eleicao}", eleicaoCd);
+  return `https://resultados.tse.jus.br/oficial/${CICLO_DEFAULT}/${eleicaoCd}/dados/${uf}/${uf}-c0001-e${eleicaoCd}-u.json`;
+}
 
 function numero(v: string | undefined | null): number {
   if (!v) return 0;
@@ -106,9 +209,7 @@ function percentual(v: string | undefined | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function parseCandidatos(
-  presidente: Record<string, unknown>
-): CandidatoTSE[] {
+function parseCandidatos(presidente: Record<string, unknown>): CandidatoTSE[] {
   const candidatos: CandidatoTSE[] = [];
   const agregadores = (presidente.agr as Array<Record<string, unknown>>) ?? [];
   for (const agr of agregadores) {
@@ -139,7 +240,7 @@ function parseCandidatos(
 
 function parseFromJson(
   d: Record<string, unknown>
-): Omit<ResultadoPresidencial, "uf" | "uf_nome"> {
+): Omit<ResultadoPresidencial, "uf" | "uf_nome" | "turno" | "eleicao_cd"> {
   const secoes = d.s as Record<string, string> | undefined;
   const eleitorado = d.e as Record<string, string> | undefined;
   const votos = d.v as Record<string, string> | undefined;
@@ -191,19 +292,25 @@ function nomeDaUF(uf: string): string {
   return uf.toUpperCase();
 }
 
-async function fetchJson(uf: string): Promise<Record<string, unknown> | null> {
-  const res = await fetch(urlDeUF(uf), metadata);
+async function fetchJson(
+  uf: string,
+  eleicaoCd: string
+): Promise<Record<string, unknown> | null> {
+  const res = await fetch(urlDeUF(uf, eleicaoCd), metadata);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`TSE respondeu HTTP ${res.status} (${uf})`);
   return (await res.json()) as Record<string, unknown>;
 }
 
 export async function consultarResultadoPresidencial(): Promise<ResultadoPresidencial | null> {
-  const json = await fetchJson("br");
+  const { turno, eleicao_cd } = await consultarTurnoAtivo();
+  const json = await fetchJson("br", eleicao_cd);
   if (!json) return null;
   return {
     uf: "br",
     uf_nome: "Brasil",
+    turno,
+    eleicao_cd,
     ...parseFromJson(json),
   };
 }
@@ -211,7 +318,8 @@ export async function consultarResultadoPresidencial(): Promise<ResultadoPreside
 export async function consultarResultadoPorEstado(
   uf: string
 ): Promise<ResultadoPorEstado | null> {
-  const json = await fetchJson(uf);
+  const { turno, eleicao_cd } = await consultarTurnoAtivo();
+  const json = await fetchJson(uf, eleicao_cd);
   if (!json) return null;
   const resumo = parseFromJson(json);
   const valem = resumo.cargos[0]?.candidatos.filter((c) => !c.anulado) ?? [];
@@ -223,6 +331,8 @@ export async function consultarResultadoPorEstado(
   return {
     uf,
     uf_nome: nomeDaUF(uf),
+    turno,
+    eleicao_cd,
     votante_maioria: primeiro,
     segundo,
     cargo,
