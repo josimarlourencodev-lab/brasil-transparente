@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Início" },
   { href: "/noticias", label: "Notícias" },
   { href: "/politicos", label: "Políticos" },
+  { href: "/eleicoes", label: "Eleições" },
   { href: "/podcast", label: "Podcast" },
   { href: "/documentacao", label: "Documentação" },
   { href: "/pitch", label: "O Brasil Transparente" },
