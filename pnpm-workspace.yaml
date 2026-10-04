@@ -3,6 +3,13 @@ packages:
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+
+# GHSA-vfj7-8cjw-p6xm (braces <=3.0.3): sem versão corrigida publicada até o momento;
+# só chega via tooling de dev (eslint-config-next/tailwindcss/fast-glob). Reavaliar
+# quando o upstream publicar o fix (braces@3.0.4+).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
 minimumReleaseAgeExclude:
   - '@types/node@26.4.1'
 overrides:
