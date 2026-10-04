@@ -2,7 +2,7 @@
   "expo": {
     "name": "Brasil Transparente",
     "slug": "brasil-transparente",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "orientation": "portrait",
     "scheme": "brasiltransparente",
     "userInterfaceStyle": "automatic",
