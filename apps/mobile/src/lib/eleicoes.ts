@@ -72,7 +72,8 @@ function configUrl(): string {
 }
 
 function urlDeUF(uf: string, eleicao: string): string {
-  return `https://resultados.tse.jus.br/oficial/${CICLO}/${eleicao}/dados/${uf}/${uf}-c0001-e${eleicao}-u.json`;
+  const codigo = String(eleicao).padStart(6, "0");
+  return `https://resultados.tse.jus.br/oficial/${CICLO}/${eleicao}/dados/${uf}/${uf}-c0001-e${codigo}-u.json`;
 }
 
 const HEADERS = {
