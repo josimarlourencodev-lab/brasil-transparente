@@ -190,12 +190,13 @@ export const metadata: RequestInit = {
 };
 
 export function urlDeUF(uf: string, eleicaoCd = CD_ELEICAO_T1_DEFAULT): string {
+  const codigo = String(eleicaoCd).padStart(6, "0");
   const ambiente = process.env.TSE_RESULTADOS_URL ?? "";
   if (ambiente)
     return ambiente
       .replaceAll("{uf}", uf)
       .replaceAll("{eleicao}", eleicaoCd);
-  return `https://resultados.tse.jus.br/oficial/${CICLO_DEFAULT}/${eleicaoCd}/dados/${uf}/${uf}-c0001-e${eleicaoCd}-u.json`;
+  return `https://resultados.tse.jus.br/oficial/${CICLO_DEFAULT}/${eleicaoCd}/dados/${uf}/${uf}-c0001-e${codigo}-u.json`;
 }
 
 function numero(v: string | undefined | null): number {
