@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { DetalheNoticiaScreen } from "./src/screens/DetalheNoticiaScreen";
 import { DetalhePoliticoScreen } from "./src/screens/DetalhePoliticoScreen";
+import { EleicoesScreen } from "./src/screens/EleicoesScreen";
 import { NewsScreen } from "./src/screens/NewsScreen";
 import { PodcastScreen } from "./src/screens/PodcastScreen";
 import { PoliticosScreen } from "./src/screens/PoliticosScreen";
@@ -32,6 +33,14 @@ function Tabs() {
         options={{
           title: "Notícias",
           tabBarIcon: ({ color }) => <Ionicons name="newspaper-outline" color={color} size={22} />,
+        }}
+      />
+      <Tab.Screen
+        name="Eleicoes"
+        component={EleicoesScreen}
+        options={{
+          title: "Eleições",
+          tabBarIcon: ({ color }) => <Ionicons name="stats-chart-outline" color={color} size={22} />,
         }}
       />
       <Tab.Screen
