@@ -19,6 +19,7 @@ import { DonutVotos } from "@/components/eleicoes/donut-votos";
 import { BarraVotos } from "@/components/eleicoes/barra-votos";
 import { LinhaApuracao } from "@/components/eleicoes/linha-apuracao";
 import { EstadosVencedores } from "@/components/eleicoes/estados-vencedores";
+import { MapaBrasil } from "@/components/eleicoes/mapa-brasil";
 
 export const dynamic = "force-dynamic";
 
@@ -333,10 +334,19 @@ export default async function EleicoesPage() {
                 agora.
               </p>
               <div className="mt-5">
-                <EstadosVencedores
+                <MapaBrasil
                   estados={estados ?? []}
                   acessivel={estados !== null && estados.length > 0}
                 />
+                <div className="mt-8">
+                  <h3 className="mb-3 text-sm font-semibold text-neutral-dark/70 dark:text-neutral-300">
+                    Detalhe por estado
+                  </h3>
+                  <EstadosVencedores
+                    estados={estados ?? []}
+                    acessivel={estados !== null && estados.length > 0}
+                  />
+                </div>
               </div>
             </div>
 
