@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { AppHeader } from "../components/Header";
 import { Chip } from "../components/Chip";
+import { MapaBrasilMobile } from "../components/MapaBrasil";
 import {
   carregarEleicoes,
   formatarNumero,
@@ -217,6 +218,7 @@ export function EleicoesScreen() {
                     Estado onde cada candidato tem mais votos válidos apurados até agora.
                   </Text>
                   <View style={{ marginTop: Espacamento.md, gap: Espacamento.sm }}>
+<<<<<<< HEAD
                     {estados.map((e: EstadoEleicao) => {
                       const liderEstado = e.votante_maioria;
                       return (
@@ -233,6 +235,32 @@ export function EleicoesScreen() {
                         </View>
                       );
                     })}
+=======
+                    <MapaBrasilMobile
+                      estados={estados}
+                      acessivel={estados.length > 0}
+                    />
+                    <View style={{ marginTop: Espacamento.sm, gap: Espacamento.sm }}>
+                      {estados.map((e: EstadoEleicao) => {
+                        const liderEstado = e.votante_maioria;
+                        return (
+                          <View key={e.uf} style={styles.linhaEstado}>
+                            <Text style={styles.ufLabel}>{e.uf_nome}</Text>
+                            <Text style={styles.ufValor} numberOfLines={1}>
+                              {liderEstado ? liderEstado.nome_urna : "—"}
+                            </Text>
+                            <Text style={styles.ufPct} numberOfLines={1}>
+                              {liderEstado?.pct_votos_validos !== null
+                                ? `${liderEstado?.pct_votos_validos?.toLocaleString("pt-BR", {
+                                    maximumFractionDigits: 1,
+                                  })}%`
+                                : "—"}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+>>>>>>> origin/develop
                   </View>
                 </View>
               ) : null}
