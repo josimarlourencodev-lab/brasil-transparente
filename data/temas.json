@@ -1,0 +1,41 @@
+{
+  "fonte": "Curadoria neutra (critérios explícitos de palavras-chave/ementas)",
+  "atualizado_em": "2026-10-05",
+  "temas": [
+    {
+      "slug": "eca-digital",
+      "nome": "ECA Digital",
+      "descricao": "Critério neutro: proposições/votações com termos sobre proteção de crianças e adolescentes no ambiente digital, conforme ementa/objeto oficial.",
+      "palavras_chave": ["ECA", "Estatuto da Criança e do Adolescente", "criança", "adolescente", "ambiente digital", "proteção digital", "conteúdo impróprio", "abuso online", "grooming"],
+      "ativo": true
+    },
+    {
+      "slug": "meio-ambiente",
+      "nome": "Meio Ambiente",
+      "descricao": "Critério neutro: matérias sobre meio ambiente, biodiversidade, clima, recursos naturais ou licenciamento, conforme texto oficial.",
+      "palavras_chave": ["meio ambiente", "biodiversidade", "mudanças climáticas", "desmatamento", "licenciamento ambiental", "unidades de conservação"],
+      "ativo": true
+    },
+    {
+      "slug": "educacao",
+      "nome": "Educação",
+      "descricao": "Critério neutro: proposições sobre educação pública, ensino e orçamento educacional, conforme ementa oficial.",
+      "palavras_chave": ["educação", "ensino", "escola", "universidade", "orçamento da educação"],
+      "ativo": true
+    },
+    {
+      "slug": "saude",
+      "nome": "Saúde",
+      "descricao": "Critério neutro: matérias relativas ao SUS, políticas de saúde e vigilância em saúde, conforme objeto oficial.",
+      "palavras_chave": ["saúde", "SUS", "Sistema Único de Saúde", "vigilância em saúde", "medicamentos"],
+      "ativo": true
+    },
+    {
+      "slug": "seguranca-publica",
+      "nome": "Segurança Pública",
+      "descricao": "Critério neutro: proposições sobre segurança pública, sistema de justiça e políticas de prevenção, conforme texto oficial.",
+      "palavras_chave": ["segurança pública", "polícia", "sistema penitenciário", "crime", "criminalidade"],
+      "ativo": true
+    }
+  ]
+}
