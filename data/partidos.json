@@ -1,0 +1,32 @@
+{
+  "fonte": "Normalização de partidos políticos (Brasil)",
+  "atualizado_em": "2026-10-05",
+  "partidos": [
+    {"sigla": "MDB", "nome": "Movimento Democrático Brasileiro"},
+    {"sigla": "PT", "nome": "Partido dos Trabalhadores"},
+    {"sigla": "PSDB", "nome": "Partido da Social Democracia Brasileira"},
+    {"sigla": "PP", "nome": "Progressistas"},
+    {"sigla": "PL", "nome": "Partido Liberal"},
+    {"sigla": "PSD", "nome": "Partido Social Democrático"},
+    {"sigla": "PDT", "nome": "Partido Democrático Trabalhista"},
+    {"sigla": "PSL", "nome": "Partido Social Liberal"},
+    {"sigla": "UNIÃO", "nome": "União Brasil"},
+    {"sigla": "REPUBLICANOS", "nome": "Republicanos"},
+    {"sigla": "PSB", "nome": "Partido Socialista Brasileiro"},
+    {"sigla": "PTB", "nome": "Partido Trabalhista Brasileiro"},
+    {"sigla": "CIDADANIA", "nome": "Cidadania"},
+    {"sigla": "PV", "nome": "Partido Verde"},
+    {"sigla": "PCdoB", "nome": "Partido Comunista do Brasil"},
+    {"sigla": "PSOL", "nome": "Partido Socialismo e Liberdade"},
+    {"sigla": "NOVO", "nome": "Partido Novo"},
+    {"sigla": "AVANTE", "nome": "Avante"},
+    {"sigla": "SOLIDARIEDADE", "nome": "Solidariedade"},
+    {"sigla": "PRTB", "nome": "Partido Renovador Trabalhista Brasileiro"},
+    {"sigla": "AGIR", "nome": "Agir"},
+    {"sigla": "DC", "nome": "Democracia Cristã"},
+    {"sigla": "PODE", "nome": "Podemos"},
+    {"sigla": "PMN", "nome": "Partido da Mobilização Nacional"},
+    {"sigla": "PSC", "nome": "Partido Social Cristão"},
+    {"sigla": "PSDC", "nome": "Partido Social Democrata Cristão"}
+  ]
+}
